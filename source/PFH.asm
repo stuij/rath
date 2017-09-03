@@ -466,7 +466,7 @@ SIGN1:  .word EXIT
 #   HERE >counted               --
 #   HERE                        -- a
 #   BL OVER COUNT + C! ;    append trailing blank
-    head WORD,4,WORD,docolon,TOCOUNTED
+    head WORD,4,"WORD",docolon,TOCOUNTED
         .word DUP,SOURCE,TOIN,FETCH,SLASHSTRING
         .word DUP,TOR,ROT,SKIP
         .word OVER,TOR,ROT,SCAN
