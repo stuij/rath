@@ -1,0 +1,134 @@
+libgba uses the convention that all GBA hardware registers are prefixed with REG_ and follow the names used in gbatek (http://work.typo3.work.de/nocash/gbatek.htm). This document should be consulted for in depth explanations of the GBA hardware and control registers.
+
+Where it makes sense all register definitions can be accessed as if they were variables.
+
+gba_types.h is included from gba_base.h which is, in turn, included from all the other header files.
+
+gba_types.h
+------------
+contains typedefs for common variable sizes used for gba programming
+
+	u8, u16, u32		- unsigned 8, 16 and 32bit values
+	s8, s16, s32		- signed
+	vu8, vu16, vu32		- volatile unsigned
+	vs8, vs16, vs32		- volatile signed
+
+this file is included by gba_base.h
+
+
+gba_base.h
+-----------
+
+the main memory areas - VRAM, IWRAM, EWRAM, SRAM and REG_BASE
+
+tag MACROS for code placement IWRAM_CODE and EWRAM code, use when prototyping
+
+	Function(parameter list) IWRAM_CODE;
+
+SystemCall(Bios Function Number)
+
+	Inserts the appropriate SWI for arm or thumb code
+
+BIT(number)
+
+	converts number to a bitmask, i.e. BIT(8) expands to 0x0010
+
+IWRAM_CODE	-	macro for placing code in IWRAM
+EWRAM_CODE	-	macro for placing code in EWRAM
+IWRAM_DATA	-	macro for placing data in IWRAM
+EWRAM_DATA	-	macro for placing data in EWRAM
+EWRAM_BSS	-	macro for placing uninitialised data in EWRAM
+
+
+modes for DMA and CPU(Fast)Set
+------------------------------
+
+FILL
+COPY16
+COPY32
+
+all other headers include this file.
+
+gba_video.h
+------------
+
+defines and macros for the gba video system
+
+There are two arrays defined for accessing the color registers - BG_COLORS and OBJ_COLORS. BG_COLORS[0] = 0; would set the first background color to black. Two helper macros for defining colors are supplied RGB5(r,g,b) and RGB8(r,g,b), the former uses the GBA native 5 bits per color element (0-31) whereas the latter converts from 8bit elements (0-255)
+
+REG_DISPCNT - the GBA display control register
+
+the available modes
+
+	MODE_0
+	MODE_1
+	MODE_2
+	MODE_3
+	MODE_4
+	MODE_5
+
+control flags
+	BACKBUFFER	-	selects the second videobuffer for bitmap modes
+	OBJ_1D_MAP	-	1 dimensional sprites
+	LCDC_OFF	-	switches the LCD off
+	BG0_ON		-	enables background zero
+	BG1_ON		-	enables background one
+	BG2_ON		-	enables background two
+	BG3_ON		-	enables background three
+	OBJ_ON		-	enables hardware sprites
+	WIN0_ON		-	enables the first window
+	WIN1_ON		-	enables the second window
+
+	BG_ALL_ON	-	enables all backgrounds (0-3)
+
+usage REG_DISPCNT = BGO_ON | OBJ_ON | OBJ_1D_MAP;
+
+REG_DISPSTAT	- LCD interrupt settings
+
+	LCDC_VBL_FLAG	- flag set during vblank
+	LCDC_HBL_FLAG	- flag set during hblank
+	LCDC_VCNT_FLAG	- flag set when the vcount value in this register is matched
+	LCDC_VBL		- enable vblank interrupt
+	LCDC_HBL		- enable hblank interrupt
+	LCDC_VCNT		- enable vcount interrupt
+	VCOUNT(m)		- sets the value to match for the vcount interrupt
+
+REG_VCOUNT	- the current scanline
+
+BGCTRL	- array for the background control registers. BGCTRL[0] would access the control register for background zero etc.
+BG_OFFSET - array for accessing the scroll registers. BG_OFFSET[0].x is the horizontal offset for background zero. Similarly, BG_OFFSET[1].y is the vertical offset register for background one.
+
+definitions for use with the background control registers
+
+	BG_SIZE_0	-	256x256
+	BG_SIZE_1	-	512x256
+	BG_SIZE_2	-	256x512
+	BG_SIZE_3	-	512x512
+
+	BG_PRIORITY(m)	- sets the display priority
+
+	BG_MOSAIC		-	enables the MOSAIC mode
+	BG_16_COLOR		-	background uses 16 color tiles
+	BG_256_COLOR	-	background uses 256 color tiles
+	BG_WRAP			-	enables wrapping for backgrounds 2 & 3
+
+	CHAR_BASE(m)	- sets the base for the tile defintions
+	SCREEN_BASE(m)	- sets the base for the background map
+
+	CHAR_BASE_ADR(m)	- gives the VRAM address for the tile definitions base
+	SCREEN_BASE_ADR(m)	- gives the VRAM address for for the background map base
+
+
+	MODE3_FB	-	array for accessing the mode 3 front frame buffer
+					MODE3_FB[y][x] = RGB5(31,31,31);
+
+	MODE5_FB	-	array for accessing the mode 5 front frame buffer
+					MODE5_FB[y][x] = RGB5(31,31,31);
+
+	MODE3_BB	-	array for accessing the mode 3 back frame buffer
+					MODE3_BB[y][x] = RGB5(31,31,31);
+
+	MODE5_BB	-	array for accessing the mode 5 back frame buffer
+					MODE5_BB[y][x] = RGB5(31,31,31);
+
+
