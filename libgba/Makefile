@@ -12,7 +12,7 @@ AFLAGS	:=	-g -Wa,--warn -mthumb -mthumb-interwork
 #---------------------------------------------------------------------------------
 # path to tools - this can be deleted if you set the path in windows
 #---------------------------------------------------------------------------------
-export PATH		:=	/c/devkitARM_r6a/bin:/bin
+#export PATH		:=	/c/devkitARM_r6a/bin:/bin
 
 
 #---------------------------------------------------------------------------------
@@ -22,7 +22,7 @@ export TARGET	:=	$(CURDIR)/lib/libgba.a
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
 
-PREFIX	:=	arm-elf-
+PREFIX	:=	arm-none-eabi-
 
 export CC		:=	$(PREFIX)gcc
 export AS		:=	$(PREFIX)as

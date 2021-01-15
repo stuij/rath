@@ -26,7 +26,7 @@ ARCH	:=	-marm -mthumb-interwork -mlong-calls
 
 CFLAGS	:=	-Wall -O3\
 			-mcpu=arm7tdmi -mtune=arm7tdmi\
- 			-fomit-frame-pointer\
+			-fomit-frame-pointer\
 			-ffast-math \
 			$(ARCH)
 
@@ -38,18 +38,18 @@ LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # path to tools - this can be deleted if you set the path in windows
 #---------------------------------------------------------------------------------
-export PATH		:=	/c/devkitARM_r11/bin:/bin:/c/bin
+# export PATH		:=	/c/devkitARM_r11/bin:/bin:/c/bin
 
 #---------------------------------------------------------------------------------
 # absolute path required since this makefile uses the build directory
 # as the working directory
 #---------------------------------------------------------------------------------
-LIBGBA	:=	/c/Forth/PF4ARM/libgba
+LIBGBA	:=	$${HOME}/code/rath/libgba
 
 #---------------------------------------------------------------------------------
 # the prefix on the compiler executables
 #---------------------------------------------------------------------------------
-PREFIX			:=	arm-elf-
+PREFIX			:=	arm-none-eabi-
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------

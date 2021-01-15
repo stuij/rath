@@ -769,8 +769,8 @@ seqaga:	.word DROP,CHARPLUS,SWAP,CHARPLUS,SWAP
 	.word BRANCH,seqbeg
 seqmat: .word TWODROP,RFROM,EXIT	/* u=0 */
 
-.include "C:/Forth/PF4ARM/source/PFD.asm"
-.include "C:/Forth/PF4ARM/source/PFH.asm"
+.include "../source/PFD.asm"
+.include "../source/PFH.asm"
 # last word from PFH.asm is COLD
 
 # Example of resource inclusion
@@ -780,16 +780,16 @@ seqmat: .word TWODROP,RFROM,EXIT	/* u=0 */
 # that must be defined as link_<last word label>
 
     head GFX_BALL,8,"GFX_BALL",dovar,COLD
-.incbin "C:/Forth/PF4ARM/res/ball.raw"
+.incbin "../res/ball.raw"
 .align
     head PAL_BALL1,9,"PAL_BALL1",dovar,GFX_BALL
-.incbin "C:/Forth/PF4ARM/res/pal1.pal"
+.incbin "../res/pal1.pal"
 .align
     head PAL_BALL2,9,"PAL_BALL2",dovar,PAL_BALL1
-.incbin "C:/Forth/PF4ARM/res/pal2.pal"
+.incbin "../res/pal2.pal"
 .align
     head PAL_BALL3,9,"PAL_BALL3",dovar,PAL_BALL2
-.incbin "C:/Forth/PF4ARM/res/pal3.pal"
+.incbin "../res/pal3.pal"
 .align
 
 .set lastword, link_PAL_BALL3		/* last word */
@@ -799,4 +799,3 @@ enddict:
 .rept 16
 .space 1024
 .endr
-
