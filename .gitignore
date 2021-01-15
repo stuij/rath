@@ -1,0 +1,6 @@
+build
+libgba/build
+*.elf
+*.sav
+*.gbfs
+*.gba
