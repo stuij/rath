@@ -12,6 +12,10 @@
 #include "xcomms.h"
 #endif
 
+#ifdef LINK_UART
+#include "uart.h"
+#endif
+
 #include "gbfs.h"
 
 // Useful definitions for handling background data, from Damian Yerrick
@@ -105,6 +109,9 @@ int main() {
 #ifdef LINK_XBOO
 	xcomms_init();
 #endif
+#ifdef LINK_UART
+  init_uart(SIO_BAUD_115200);
+#endif
 
 	// Boot up PandaForth
 	boot(forthInfo);
@@ -188,6 +195,9 @@ int EWRAM_CODE service(int serv, int param) {
 #endif
 #ifdef LINK_MBV2
 				ch = dgetch();
+#endif
+#ifdef LINK_UART
+				ch = rcv_char();
 #endif
 #ifdef LINK_NONE
 				while(1) VBlankIntrWait();
