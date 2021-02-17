@@ -17,7 +17,7 @@ INCLUDES	:=	include
 # Link Mode : NONE, MBV2, XBOO, UART
 #---------------------------------------------------------------------------------
 
-LINKMODE	:=	NONE
+LINKMODE	:=	UART
 
 #---------------------------------------------------------------------------------
 # options for code generation

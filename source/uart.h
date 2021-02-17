@@ -1,4 +1,4 @@
-#include "gba_sio.h"
+#include <gba_sio.h>
 
 void init_uart(unsigned short UART);
 int rcv_char(void);

@@ -4,19 +4,11 @@
 #include "gba_interrupt.h"
 #include "gba_sprites.h"
 
-#ifdef LINK_MBV2
-#include "mbv2.h"
-#endif
-
-#ifdef LINK_XBOO
-#include "xcomms.h"
-#endif
+#include "gbfs.h"
 
 #ifdef LINK_UART
 #include "uart.h"
 #endif
-
-#include "gbfs.h"
 
 // Useful definitions for handling background data, from Damian Yerrick
 typedef u16 NAMETABLE[32][32];
@@ -106,9 +98,6 @@ int main() {
     		sourcePos = gbfs_get_obj(gbfs,gbfs_entry->name,&sourceLen);
     	}
 
-#ifdef LINK_XBOO
-	xcomms_init();
-#endif
 #ifdef LINK_UART
   init_uart(SIO_BAUD_115200);
 #endif
@@ -132,7 +121,7 @@ void write_char(int ch) {
 			// Clean the next colon
 			for(x=0; x<30; x++) console[row][x] = ' ';
 		}
-	} else if (ch == '\r') {
+	} else if (ch == '\n') {
 		col=0;
 		row++;
 		if (row == 20) row = 0;		
@@ -187,15 +176,9 @@ int EWRAM_CODE service(int serv, int param) {
 				}
 				if (ch == '\t') return ' ';	
 				/*if (ch == '\n') for(i=0; i<30;i++) VBlankIntrWait();*/
-				if (ch == '\n') return 0;	
+				if (ch == '\r') return 0;
 				return ch;
 			} else {
-#ifdef LINK_XBOO
-				ch = xcomms_recv();
-#endif
-#ifdef LINK_MBV2
-				ch = dgetch();
-#endif
 #ifdef LINK_UART
 				ch = rcv_char();
 #endif
@@ -203,7 +186,7 @@ int EWRAM_CODE service(int serv, int param) {
 				while(1) VBlankIntrWait();
 				return 0;
 #else
-				if (ch == '\n') return 0;
+				if (ch == '\r') return 0;
 				return ch;				
 #endif			
 			}
@@ -232,4 +215,3 @@ int display(u32 val, u16 *p) {
 	for(i=0; i<30;i++) VBlankIntrWait(); 
 	return 0;
 }
-

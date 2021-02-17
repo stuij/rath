@@ -247,7 +247,7 @@ MIN1:   .word DROP,EXIT
 #C CR      --               output newline
 #_   0D EMIT 0A EMIT ;
     head CR,2,"CR",docolon,COUNT
-        .word LIT,0x0d,EMIT,LIT,0x0a,EMIT,EXIT
+        .word LIT,0x0a,EMIT,EXIT
 
 #C SPACE   --               output a space
 #   BL EMIT ;
@@ -285,7 +285,7 @@ UMAX1:  .word DROP,EXIT
 #   DROP NIP SWAP - ;
     head ACCEPT,6,"ACCEPT",docolon,UMAX
         .word OVER,PLUS,ONEMINUS,OVER
-ACC1:   .word KEY,DUP,LIT,0x0d,NOTEQUAL,QBRANCH,ACC5
+ACC1:   .word KEY,DUP,LIT,0x0a,NOTEQUAL,QBRANCH,ACC5
         .word DUP,EMIT,DUP,LIT,8,EQUAL,QBRANCH,ACC3
         .word DROP,ONEMINUS,TOR,OVER,RFROM,UMAX
         .word BRANCH,ACC4
@@ -655,13 +655,16 @@ QUIT1:  .word TIB,DUP,TIBSIZE,ACCEPT,SPACE
         .word CR,XSQUOTE
         .byte 3
         .ascii "OK "
+        .align
         /* .align would add 4 bytes here */
         .word TYPE
+        .word LIT,0x1e,EMIT     /* drop serial receive queue */
 QUIT2:  .word BRANCH,QUIT1
 
 #C ABORT    i*x --   R: j*x --   clear stk & QUIT
 #   S0 SP!  QUIT ;
     head ABORT,5,"ABORT",docolon,QUIT
+        .word LIT,0x1e,EMIT     /* drop serial receive queue */
         .word S0,SPSTORE,QUIT   /* QUIT never returns */
 
 #Z ?ABORT   f c-addr u --      abort & print msg
@@ -1000,9 +1003,8 @@ DOTS2:  .word EXIT
     head COLD,4,COLD,docolon,DOTS
         .word UINIT,U0,NINIT,CMOVE
         .word XSQUOTE
-        .byte 30
-        .ascii "-=[ PandaForth ]=- by Torlus"
-        .byte 0x0d,0x0a
-        .align	
-        .word TYPE,ABORT       /* ABORT never returns */
-
+        .byte 28
+        .ascii "Type forth my friend...    "
+        .byte 0x0a
+        .align
+        .word TYPE,S0,SPSTORE,QUIT       /* ABORT never returns */
