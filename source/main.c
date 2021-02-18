@@ -3,6 +3,7 @@
 #include "gba_systemcalls.h"
 #include "gba_interrupt.h"
 #include "gba_sprites.h"
+//#include "tonc.h"
 
 #include "gbfs.h"
 

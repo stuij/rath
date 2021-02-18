@@ -45,6 +45,7 @@ LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $@).map
 # as the working directory
 #---------------------------------------------------------------------------------
 LIBGBA	:=	$${HOME}/code/rath/libgba
+TONCLIB		:= $(DEVKITARM)/../libtonc
 
 #---------------------------------------------------------------------------------
 # the prefix on the compiler executables
@@ -53,14 +54,14 @@ PREFIX			:=	arm-none-eabi-
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-lgba
+LIBS	:=	-lgba #-ltonc
 
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:=	$(LIBGBA)
+LIBDIRS	:=	$(LIBGBA) # $(TONCLIB)
 
 
 #---------------------------------------------------------------------------------
