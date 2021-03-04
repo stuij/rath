@@ -9,7 +9,7 @@
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
 TARGET		:=	PF
-BUILD		:=	build
+BUILD		  :=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 
@@ -44,7 +44,7 @@ LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $@).map
 # absolute path required since this makefile uses the build directory
 # as the working directory
 #---------------------------------------------------------------------------------
-LIBGBA	:=	$${HOME}/code/rath/libgba
+#LIBGBA	:=	$${HOME}/code/rath/libgba
 TONCLIB		:= $(DEVKITARM)/../libtonc
 
 #---------------------------------------------------------------------------------
@@ -54,14 +54,14 @@ PREFIX			:=	arm-none-eabi-
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-lgba #-ltonc
+LIBS	:=	-ltonc # -lgba
 
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:=	$(LIBGBA) # $(TONCLIB)
+LIBDIRS	:= $(TONCLIB) # $(LIBGBA)
 
 
 #---------------------------------------------------------------------------------

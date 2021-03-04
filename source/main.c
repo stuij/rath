@@ -1,12 +1,6 @@
-#include "gba_base.h"
-#include "gba_video.h"
-#include "gba_systemcalls.h"
-#include "gba_interrupt.h"
-#include "gba_sprites.h"
-//#include "tonc.h"
+#include "tonc.h"
 
 #include "gbfs.h"
-
 #ifdef LINK_UART
 #include "uart.h"
 #endif
@@ -51,38 +45,37 @@ int display(u32 val, u16 *p);
 int main() {
 	int i;
 	u16 *src, *dst;
-		
+
 	// Set up the interrupt handlers
-	InitInterrupt();
+	irq_init(NULL);
 	// Enable Vblank Interrupt to allow VblankIntrWait
-	EnableInterrupt(Int_Vblank);
-	// Allow Interrupts
-	REG_IME = 1;
+	irq_add(II_VBLANK, NULL);
 
 	// Init Background Palette
-	BG_COLORS[0] = RGB5(0, 0, 0);
-	BG_COLORS[1] = RGB5(15, 15, 0);
+	pal_bg_mem[0] = RGB15(0, 0, 0);
+	pal_bg_mem[1] = RGB15(15, 15, 0);
 
 	// Copy Font Data
 	//memcpy((u16 *)CHAR_BASE_ADR(0),gba_font,256*16*2);
 	src = (u16 *)gba_font;
-    	dst = (u16 *)CHAR_BASE_ADR(0);
-    	for(i=0; i<256*16*2; i++) *dst++ = *src++;
+  dst = (u16 *)tile_mem[0];
+  for(i=0; i<256*16*2; i++) *dst++ = *src++;
 
 	// Init Background 0
-	BG0HOFS = 0;
-	BG0VOFS = 0;
-	BGCTRL[0] = CHAR_BASE(0) | BG_256_COLOR | SCREEN_BASE(8) | BG_SIZE_0;
+	REG_BG0HOFS = 0;
+	REG_BG0VOFS = 0;
+  // libgba eq:  CHAR_BASE               SCREEN_BASE
+	REG_BGCNT[0] = (0 << 2) | BG_8BPP | (8 << 8) | BG_SIZE0;
 
 	// Clear the background
 	for(i=0; i<32*32; i++) MAP[8][0][i] = ' ';
 
 	// Initialize sprites (outside of screen)
-	OBJATTR obj_attr = {160, 240, 0, 0};
-	for(i=0; i<128; i++) OAM[i] = obj_attr;
+	OBJ_ATTR obj_attr = {160, 240, 0, 0};
+	for(i=0; i<128; i++) oam_mem[i] = obj_attr;
 
 	// Screen Mode & Background to display & Sprites
-	REG_DISPCNT = MODE_0 | BG0_ON | OBJ_ON | OBJ_1D_MAP;
+	REG_DISPCNT = DCNT_MODE0 | DCNT_BG0 | DCNT_OBJ | DCNT_OBJ_1D;
 
 	// Initialize Console Data
 	row = col = 0;
