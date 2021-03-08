@@ -1,13 +1,11 @@
 #include "tonc.h"
 
 #include "gbfs.h"
+#include "console.h"
 #ifdef LINK_UART
+#include "circular_buffer.h"
 #include "uart.h"
 #endif
-
-// Useful definitions for handling background data, from Damian Yerrick
-typedef u16 NAMETABLE[32][32];
-#define MAP ((NAMETABLE *)0x06000000)
 
 // 8x8 Font
 extern const u8 gba_font[];
@@ -26,11 +24,6 @@ u8 *forthInfo[] = { ps_area+128, rs_area+128, user_area, holdpad_area+40 };
 // PandaForth entry point function
 extern void boot(u8 *forthInfo[]);
 
-// Console Data
-u16 console[20][30];
-// Cursor position
-int row,col;
-
 // Source Files
 int filesCount;
 GBFS_FILE *gbfs;
@@ -46,8 +39,15 @@ int main() {
 	int i;
 	u16 *src, *dst;
 
+#ifdef LINK_UART
+  init_circ_buff(&g_uart_rcv_buffer, g_rcv_buffer, UART_RCV_BUFFER_SIZE);
+  init_uart(SIO_BAUD_115200);
+#endif
+
 	// Set up the interrupt handlers
 	irq_init(NULL);
+  // Set uart interrupt handler
+  irq_add(II_SERIAL, handle_uart_gbaser);
 	// Enable Vblank Interrupt to allow VblankIntrWait
 	irq_add(II_VBLANK, NULL);
 
@@ -92,10 +92,6 @@ int main() {
     		sourcePos = gbfs_get_obj(gbfs,gbfs_entry->name,&sourceLen);
     	}
 
-#ifdef LINK_UART
-  init_uart(SIO_BAUD_115200);
-#endif
-
 	// Boot up PandaForth
 	boot(forthInfo);
 	
@@ -103,62 +99,22 @@ int main() {
 	return 0;
 }
 
-void write_char(int ch) {
-	int lastrow = row;
-	int x,y,i;
-	if (ch >= 32) { 
-		console[row][col++] = ch;		
-		if (col == 30) {
-			col=0;
-			row++;
-			if (row == 20) row = 0;
-			// Clean the next colon
-			for(x=0; x<30; x++) console[row][x] = ' ';
-		}
-	} else if (ch == '\n') {
-		col=0;
-		row++;
-		if (row == 20) row = 0;		
-		// Clean the next colon
-		for(x=0; x<30; x++) console[row][x] = ' ';
-	} else if (ch == 0x08) {
-		console[row][col--] = ' ';
-		if (col < 0) {
-			col = 29;
-			row--;
-			if (row < 0) row = 19;
-		}
-	}
-	
-	
-	if (lastrow != row) {
-		// Update the whole screen
-		y = row+1;
-		if (y > 19) y=0;
-		for(i=0; i<20; i++) {
-			for(x=0; x<30; x++) {
-				MAP[8][i][x] = console[y][x];
-			}
-			y++;
-			if (y > 19) y=0;
-		}
-	} else {
-		// Update only the current row
-		for(x=0; x<30; x++) {
-			MAP[8][19][x] = console[row][x];
-		}
-	}
-}
-
 int EWRAM_CODE service(int serv, int param) {
 	int ch;
 	if (serv == 6) {
-		if (param != 0xff) {
+    if (param == 0x1e) {
+      write_char(param);
+#ifndef LINK_NONE
+      if(!circ_bytes_available(&g_uart_rcv_buffer)) {
+        dputchar(param);
+      }
+#endif
+    } else if (param != 0xff) {
 			write_char(param);
 #ifndef LINK_NONE
 			dputchar(param);
 #endif
-		} else {
+    } else {
 			if (sourceLen > 0) {
 				sourceLen--;
 				ch = *sourcePos++;

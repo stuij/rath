@@ -1,16 +1,29 @@
+#ifndef UART_H
+#define UART_H
+
 #include <tonc.h>
 
-void init_uart(unsigned short UART);
-int rcv_char(void);
-void snd_char(int character);
+#include "circular_buffer.h"
+
+void init_uart(u16 UART);
+s32 rcv_uart_ret(char in[]);
+void snd_uart_ret(char out[], s32 len);
+s32 rcv_uart_gbaser(struct circ_buff* circ, char* type, char* status);
+void snd_uart_gbaser(char out[], s32 len, char type);
+
+void snd_char(s32 character);
+s32 rcv_char(void);
+
+// rcv buffer things
+#define UART_RCV_BUFFER_SIZE 4096
+extern char g_rcv_buffer[UART_RCV_BUFFER_SIZE];
+extern struct circ_buff g_uart_rcv_buffer;
+
+// irq handlers
+void handle_uart_ret();
+void handle_uart_gbaser();
 
 #define dputchar snd_char
-
-/* These are buggered right now
-#define SIO_SET_SDHI      REG_RCNT &= 0x0020
-#define SIO_SET_SDLO      REG_RCNT &= (0x0020 ^ 0xFFFF)
-#define SIO_GET_SC        REG_RCNT &  0x0010
-*/
 
 // UART settings
 #define SIO_USE_UART      0x3000
@@ -32,3 +45,12 @@ void snd_char(int character);
 #define SIO_SEND_ENABLE   0x0400
 #define SIO_RECV_ENABLE   0x0800
 #define SIO_REQUEST_IRQ   0x4000
+
+// GBuArt message
+#define GBASER_UNDEFINED '\x00'
+#define GBASER_STRING '\x01'
+#define GBASER_OK '\xFF'
+#define GBASER_ERROR '\xFE'
+#define GBASER_CRC_ERROR '\xFD'
+
+#endif // UART_H
