@@ -658,13 +658,13 @@ QUIT1:  .word TIB,DUP,TIBSIZE,ACCEPT,SPACE
         .align
         /* .align would add 4 bytes here */
         .word TYPE
-        .word LIT,0x1e,EMIT     /* drop serial receive queue */
+        /* .word LIT,0x1e,EMIT      drop serial receive queue */
 QUIT2:  .word BRANCH,QUIT1
 
 #C ABORT    i*x --   R: j*x --   clear stk & QUIT
 #   S0 SP!  QUIT ;
     head ABORT,5,"ABORT",docolon,QUIT
-        .word LIT,0x1e,EMIT     /* drop serial receive queue */
+        /* .word LIT,0x1e,EMIT      drop serial receive queue */
         .word S0,SPSTORE,QUIT   /* QUIT never returns */
 
 #Z ?ABORT   f c-addr u --      abort & print msg

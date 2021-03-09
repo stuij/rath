@@ -102,6 +102,7 @@ int main() {
 int EWRAM_CODE service(int serv, int param) {
 	int ch;
 	if (serv == 6) {
+    /*
     if (param == 0x1e) {
       write_char(param);
 #ifndef LINK_NONE
@@ -109,7 +110,9 @@ int EWRAM_CODE service(int serv, int param) {
         dputchar(param);
       }
 #endif
-    } else if (param != 0xff) {
+    } else */
+    // 0xff == want new char
+    if (param != 0xff) {
 			write_char(param);
 #ifndef LINK_NONE
 			dputchar(param);
@@ -130,6 +133,9 @@ int EWRAM_CODE service(int serv, int param) {
 				return ch;
 			} else {
 #ifdef LINK_UART
+        if(!circ_bytes_available(&g_uart_rcv_buffer)) {
+          dputchar(0x1e);
+        }
 				ch = rcv_char();
 #endif
 #ifdef LINK_NONE
