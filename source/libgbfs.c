@@ -54,7 +54,7 @@ typedef unsigned long u32;
    padbin */
 #define GBFS_ALIGNMENT  256
 
-const GBFS_FILE *find_first_gbfs_file(const void *start)
+GBFS_FILE *find_first_gbfs_file(const void *start)
 {
   /* align the pointer */
   const u32 *here = (const u32 *)
@@ -77,7 +77,7 @@ const GBFS_FILE *find_first_gbfs_file(const void *start)
       /* we're already after here;
          if the rest of the magic matches, then we're through */
       if(!memcmp(here + 1, rest_of_magic, 12))
-        return (const GBFS_FILE *)here;
+        return (GBFS_FILE *)here;
     }
     here += GBFS_ALIGNMENT / sizeof(*here);
   }
@@ -85,7 +85,7 @@ const GBFS_FILE *find_first_gbfs_file(const void *start)
 }
 
 
-const void *skip_gbfs_file(const GBFS_FILE *file)
+void *skip_gbfs_file(const GBFS_FILE *file)
 {
   return ((char *)file + file->total_len);
 }
@@ -97,7 +97,7 @@ static int namecmp(const void *a, const void *b)
 }
 
 
-const void *gbfs_get_obj(const GBFS_FILE *file,
+void *gbfs_get_obj(const GBFS_FILE *file,
                          const char *name,
                          u32 *len)
 {

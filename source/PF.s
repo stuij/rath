@@ -274,7 +274,7 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 
 #C ?DUP     x -- 0 | x x    DUP if nonzero
     codeh QDUP,4,"?DUP",DUP
-        cmps	r1, #0
+        cmp	r1, #0
 	strne	r1, [sp, #-4]!	/* push TOS */	
         next
 
@@ -490,14 +490,14 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 
 #C 0=     n/u -- flag    return true if TOS=0
     codeh ZEROEQUAL,2,"0=",PLUSSTORE
-	cmps	r1, #0
+	cmp	r1, #0
 	mvneq	r1, #0
 	movne	r1, #0
 	next
 
 #C 0<     n -- flag      true if TOS negative
     codeh ZEROLESS,2,"0<",ZEROEQUAL
-	cmps	r1, #0
+	cmp r1, #0
 	mvnlt	r1, #0
 	movge	r1, #0
 	next
@@ -505,7 +505,7 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 #C =      x1 x2 -- flag         test x1=x2
     codeh EQUAL,1,"=",ZEROLESS
     	ldr	r0, [sp], #4	/* read value and update sp */
-	cmps	r0, r1
+	cmp	r0, r1
 	mvneq	r1, #0
 	movne	r1, #0
 	next
@@ -513,7 +513,7 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 #X <>     x1 x2 -- flag    test not eq (not ANSI)
     codeh NOTEQUAL,2,"<>",EQUAL
     	ldr	r0, [sp], #4	/* read value and update sp */
-	cmps	r1, r0
+	cmp	r1, r0
 	mvnne	r1, #0
 	moveq	r1, #0
 	next
@@ -521,7 +521,7 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 #C <      n1 n2 -- flag        test n1<n2, signed
     codeh LESS,1,"<",NOTEQUAL
 	ldr	r0, [sp], #4	/* read value and update sp */
-	cmps	r0, r1
+	cmp	r0, r1
 	mvnlt	r1, #0
 	movge	r1, #0
 	next
@@ -529,7 +529,7 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 #C >     n1 n2 -- flag         test n1>n2, signed
     codeh GREATER,1,">",LESS
 	ldr	r0, [sp], #4	/* read value and update sp */
-	cmps	r0, r1
+	cmp	r0, r1
 	mvngt	r1, #0
 	movle	r1, #0
 	next
@@ -537,7 +537,7 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 #C U<    u1 u2 -- flag       test u1<n2, unsigned
     codeh ULESS,2,"U<",GREATER
 	ldr	r0, [sp], #4	/* read value and update sp */
-	cmps	r0, r1
+	cmp	r0, r1
 	mvncc	r1, #0
 	movcs	r1, #0
 	next
@@ -545,7 +545,7 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 #X U>    u1 u2 -- flag     u1>u2 unsgd (not ANSI)
     codeh UGREATER,2,"U>",ULESS
 	ldr	r0, [sp], #4	/* read value and update sp */
-	cmps	r0, r1
+	cmp	r0, r1
 	mvnhi	r1, #0
 	movls	r1, #0
 	next
@@ -559,7 +559,7 @@ KEY2:   .word SAVEKEY,CFETCH,LIT,0,SAVEKEY,CSTORE
 
 #Z ?branch   x --              branch if TOS zero
     codeh QBRANCH,7,"?BRANCH",BRANCH
-	cmps	r1, #0
+	cmp	r1, #0
 	addne	ip, ip, #4	/* skip inline value */	
 	ldreq	ip, [ip]	
 	ldr	r1, [sp], #4	/* pop new TOS */

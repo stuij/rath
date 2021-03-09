@@ -36,7 +36,7 @@ int display(u32 val, u16 *p);
 
 
 int main() {
-	int i;
+	int i,j;
 	u16 *src, *dst;
 
 #ifdef LINK_UART
@@ -68,7 +68,9 @@ int main() {
 	REG_BGCNT[0] = (0 << 2) | BG_8BPP | (8 << 8) | BG_SIZE0;
 
 	// Clear the background
-	for(i=0; i<32*32; i++) MAP[8][0][i] = ' ';
+	for(i=0; i<32; i++)
+    for(j=0; j<32; j++)
+      MAP[8][j][i] = ' ';
 
 	// Initialize sprites (outside of screen)
 	OBJ_ATTR obj_attr = {160, 240, 0, 0};
@@ -79,22 +81,24 @@ int main() {
 
 	// Initialize Console Data
 	row = col = 0;
-	for(i=0; i<30*20; i++) console[0][i] = ' ';
+	for(i=0; i<30; i++)
+    for(j=0; j<20; j++)
+      console[j][i] = ' ';
 
 	// Find the embedded source, if any
 	gbfs_entry = NULL;
-    	gbfs = find_first_gbfs_file(find_first_gbfs_file);
-    	sourceLen = 0;
-    	    	
-    	if (gbfs != NULL) {
-    		filesCount = gbfs->dir_nmemb-1;
-        	gbfs_entry = (GBFS_ENTRY *)((char *)gbfs + gbfs->dir_off);        
-    		sourcePos = gbfs_get_obj(gbfs,gbfs_entry->name,&sourceLen);
-    	}
+  gbfs = find_first_gbfs_file(find_first_gbfs_file);
+  sourceLen = 0;
+
+  if (gbfs != NULL) {
+    filesCount = gbfs->dir_nmemb-1;
+    gbfs_entry = (GBFS_ENTRY *)((char *)gbfs + gbfs->dir_off);
+    sourcePos = gbfs_get_obj(gbfs,gbfs_entry->name,&sourceLen);
+  }
 
 	// Boot up PandaForth
 	boot(forthInfo);
-	
+
 	// Never reached
 	return 0;
 }
@@ -102,16 +106,6 @@ int main() {
 int EWRAM_CODE service(int serv, int param) {
 	int ch;
 	if (serv == 6) {
-    /*
-    if (param == 0x1e) {
-      write_char(param);
-#ifndef LINK_NONE
-      if(!circ_bytes_available(&g_uart_rcv_buffer)) {
-        dputchar(param);
-      }
-#endif
-    } else */
-    // 0xff == want new char
     if (param != 0xff) {
 			write_char(param);
 #ifndef LINK_NONE
@@ -123,11 +117,11 @@ int EWRAM_CODE service(int serv, int param) {
 				ch = *sourcePos++;
 				if ((sourceLen == 0) && (filesCount > 0)) {
 					filesCount--;
-			        	gbfs_entry++;
-    					sourcePos = gbfs_get_obj(gbfs,gbfs_entry->name,&sourceLen);
-    					if (sourcePos == NULL) sourceLen=0;
+          gbfs_entry++;
+          sourcePos = gbfs_get_obj(gbfs,gbfs_entry->name,&sourceLen);
+          if (sourcePos == NULL) sourceLen=0;
 				}
-				if (ch == '\t') return ' ';	
+				if (ch == '\t') return ' ';
 				/*if (ch == '\n') for(i=0; i<30;i++) VBlankIntrWait();*/
 				if (ch == '\r') return 0;
 				return ch;
@@ -143,31 +137,13 @@ int EWRAM_CODE service(int serv, int param) {
 				return 0;
 #else
 				if (ch == '\r') return 0;
-				return ch;				
-#endif			
+				return ch;
+#endif
 			}
 		}
 	} else if (serv == 1) {
-		while(param--) VBlankIntrWait(); 	
+		while(param--) VBlankIntrWait();
 		return 0;
 	}
-	return 0;
-}
-
-
-#define digit(x) ((x)<10?'0'+(x):'A'+(x)-10)
-
-int display(u32 val, u16 *p) {
-	int i;
-	*p++ = digit( (val & 0xf0000000)>>28 );
-	*p++ = digit( (val & 0x0f000000)>>24 );
-	*p++ = digit( (val & 0x00f00000)>>20 );
-	*p++ = digit( (val & 0x000f0000)>>16 );
-	*p++ = digit( (val & 0x0000f000)>>12 );
-	*p++ = digit( (val & 0x00000f00)>>8 );
-	*p++ = digit( (val & 0x000000f0)>>4 );
-	*p++ = digit( (val & 0x0000000f)>>0 );
-	// Pause for two seconds
-	for(i=0; i<30;i++) VBlankIntrWait(); 
 	return 0;
 }

@@ -58,9 +58,9 @@ typedef struct GBFS_ENTRY
 } GBFS_ENTRY;
 
 
-const GBFS_FILE *find_first_gbfs_file(const void *start);
-const void *skip_gbfs_file(const GBFS_FILE *file);
-const void *gbfs_get_obj(const GBFS_FILE *file,
+GBFS_FILE *find_first_gbfs_file(const void *start);
+void *skip_gbfs_file(const GBFS_FILE *file);
+void *gbfs_get_obj(const GBFS_FILE *file,
                          const char *name,
                          u32 *len);
 void *gbfs_copy_obj(void *dst,
