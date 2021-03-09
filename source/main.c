@@ -53,7 +53,7 @@ int main() {
 
 	// Init Background Palette
 	pal_bg_mem[0] = RGB15(0, 0, 0);
-	pal_bg_mem[1] = RGB15(15, 15, 0);
+	pal_bg_mem[1] = CLR_WHITE;
 
 	// Copy Font Data
 	//memcpy((u16 *)CHAR_BASE_ADR(0),gba_font,256*16*2);
