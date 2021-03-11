@@ -71,10 +71,4 @@ void write_console_line_circ(struct circ_buff* buff) {
 
 // print to console
 void printc (char* format, ...) {
-  char buffer[256];
-  va_list args;
-  va_start (args, format);
-  vsnprintf (buffer, sizeof(buffer), format, args);
-  va_end (args);
-  write_console_line(buffer);
 }

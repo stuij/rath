@@ -13,7 +13,7 @@
 # be directed to the author at 221 King St. E.,
 # #32, Hamilton, Ontario L8N 1B5 Canada
 
-.section .ewram,"ax",%progbits
+.section .iwram,"ax",%progbits
 
 .global boot
 

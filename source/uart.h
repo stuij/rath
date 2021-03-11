@@ -15,7 +15,7 @@ void snd_char(s32 character);
 s32 rcv_char(void);
 
 // rcv buffer things
-#define UART_RCV_BUFFER_SIZE 4096
+#define UART_RCV_BUFFER_SIZE 256
 extern char g_rcv_buffer[UART_RCV_BUFFER_SIZE];
 extern struct circ_buff g_uart_rcv_buffer;
 
