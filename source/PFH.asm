@@ -1,82 +1,82 @@
 # SYSTEM VARIABLES & CONSTANTS ==================
 
 #C BL      -- char            an ASCII space
-    head BL,2,"BL",docon,STOREDEST
+    head bl,2,"bl",docon,storedest
         .word 0x20
 
 #Z tibsize  -- n         size of TIB
-    head TIBSIZE,7,"TIBSIZE",docon,BL
+    head tibsize,7,"tibsize",docon,bl
         .word 124          /* 2 chars safety zone */
 
 #X tib     -- a-addr     Terminal Input Buffer
 #  HEX 82 CONSTANT TIB   CP/M systems: 126 bytes
 #  HEX -80 USER TIB      others: below user area
-    head TIB,3,"TIB",dovar,TIBSIZE
+    head tib,3,"tib",dovar,tibsize
 .space 128
 
 #Z u0      -- a-addr       current user area adrs
-    codeh U0,2,"U0",TIB
+    codeh u0,2,"u0",tib
 	str	r1, [sp, #-4]!	/* push TOS */
         mov	r1, r2
         next
 
 #C >IN     -- a-addr        holds offset into TIB
-    head TOIN,3,">IN",douser,U0
+    head toin,3,">in",douser,u0
         .word 4
 
 #C BASE    -- a-addr       holds conversion radix
-    head BASE,4,"BASE",douser,TOIN
+    head base,4,"base",douser,toin
         .word 8
 
 #C STATE   -- a-addr       holds compiler state
-    head STATE,5,"STATE",douser,BASE
+    head state,5,"state",douser,base
         .word 12
 
 #Z dp      -- a-addr       holds dictionary ptr
-    head DP,2,"DP",douser,STATE
+    head dp,2,"dp",douser,state
     	.word 16
 
 #Z 'source  -- a-addr      two cells: len, adrs
-    head TICKSOURCE,7,"'SOURCE",douser,DP
+    head ticksource,7,"'source",douser,dp
     	.word 20
 
 #Z latest    -- a-addr     last word in dict.
-    head LATEST,6,"LATEST",douser,TICKSOURCE
+    head latest,6,"latest",douser,ticksource
     	.word 28
 
 #Z hp       -- a-addr     HOLD pointer
-    head HP,2,"HP",douser,LATEST
+    head hp,2,"hp",douser,latest
     	.word 32
 
 #Z LP       -- a-addr     Leave-stack pointer
-    head LP,2,"LP",douser,HP
+    head lp,2,"lp",douser,hp
     	.word 36
 
 #Z s0       -- a-addr     end of parameter stack
-    codeh S0,2,"S0",LP
+    codeh s0,2,"s0",lp
     	str	r1, [sp, #-4]!	/* push old TOS */
 	ldr	r1, [r10]
     	next
-    	
+
 #X PAD       -- a-addr    user PAD buffer
 #                         = end of hold area!
-    codeh PAD,3,"PAD",S0
+    codeh pad,3,"pad",s0
     	str	r1, [sp, #-4]!	/* push old TOS */
 	ldr	r1, [r10, #12]
     	next
 
 #Z l0       -- a-addr     bottom of Leave stack
-    head L0,2,"L0",dovar,PAD
+    head l0,2,"l0",dovar,pad
 .space 128
 
 #Z r0       -- a-addr     end of return stack
-    codeh R0,2,"R0",L0
+    codeh r0,2,"r0",l0
     	str	r1, [sp, #-4]!	/* push old TOS */
 	ldr	r1, [r10, #4]
     	next
 
 #Z uinit    -- addr  initial values for user area
-    head UINIT,5,"UINIT",docreate,R0
+    head uinit,5,"uinit",docreate,r0
         .word 0x12345678,0,10,0     /* reserved (UNUSED),>IN,BASE,STATE */
         .word enddict      /* DP */
         .word 0,0          /* SOURCE init'd elsewhere */
@@ -84,52 +84,52 @@
         .word 0            /* HP init'd elsewhere */
 
 #Z #init    -- n    #bytes of user area init data
-    head NINIT,5,"#INIT",docon,UINIT
+    head ninit,5,"#init",docon,uinit
         .word 36
 
 # ARITHMETIC OPERATORS ==========================
 
 #C S>D    n -- d          single -> double prec.
 #   DUP 0< ;
-    head STOD,3,"S>D",docolon,NINIT
-        .word DUP,ZEROLESS,EXIT
+    head stod,3,"s>d",docolon,ninit
+        .word dup,zeroless,exit
 
 #Z ?NEGATE  n1 n2 -- n3  negate n1 if n2 negative
 #_   0< IF NEGATE THEN ;        ...a common factor
-    head QNEGATE,7,"?NEGATE",docolon,STOD
-        .word ZEROLESS,QBRANCH,QNEG1,NEGATE
-QNEG1:  .word EXIT
+    head qnegate,7,"?negate",docolon,stod
+        .word zeroless,qbranch,qneg1,negate
+qneg1:  .word exit
 
 #C ABS     n1 -- +n2     absolute value
 #   DUP ?NEGATE ;
-    head ABS,3,"ABS",docolon,QNEGATE
-        .word DUP,QNEGATE,EXIT
+    head abs,3,"abs",docolon,qnegate
+        .word dup,qnegate,exit
 
 #X DNEGATE   d1 -- d2     negate double precision
 #   SWAP INVERT SWAP INVERT 1 M+ ;
-    head DNEGATE,7,"DNEGATE",docolon,ABS
-        .word SWAP,INVERT,SWAP,INVERT,LIT,1,MPLUS
-        .word EXIT
+    head dnegate,7,"dnegate",docolon,abs
+        .word swap,invert,swap,invert,lit,1,mplus
+        .word exit
 
 #Z ?DNEGATE  d1 n -- d2   negate d1 if n negative
 #_   0< IF DNEGATE THEN ;       ...a common factor
-    head QDNEGATE,8,"?DNEGATE",docolon,DNEGATE
-        .word ZEROLESS,QBRANCH,DNEG1,DNEGATE
-DNEG1:  .word EXIT
+    head qdnegate,8,"?dnegate",docolon,dnegate
+        .word zeroless,qbranch,dneg1,dnegate
+dneg1:  .word exit
 
 #X DABS     d1 -- +d2    absolute value dbl.prec.
 #   DUP ?DNEGATE ;
-    head DABS,4,"DABS",docolon,QDNEGATE
-        .word DUP,QDNEGATE,EXIT
+    head dabs,4,"dabs",docolon,qdnegate
+        .word dup,qdnegate,exit
 
 #C M*     n1 n2 -- d    signed 16*16->32 multiply
 #_   2DUP XOR >R        carries sign of the result
 #   SWAP ABS SWAP ABS UM*
 #   R> ?DNEGATE ;
-    head MSTAR,2,"M*",docolon,DABS
-        .word TWODUP,XOR,TOR
-        .word SWAP,ABS,SWAP,ABS,UMSTAR
-        .word RFROM,QDNEGATE,EXIT
+    head mstar,2,"m*",docolon,dabs
+        .word twodup,xor,tor
+        .word swap,abs,swap,abs,umstar
+        .word rfrom,qdnegate,exit
 
 #C SM/REM   d1 n1 -- n2 n3   symmetric signed div
 #_   2DUP XOR >R              sign of quotient
@@ -138,11 +138,11 @@ DNEG1:  .word EXIT
 #   SWAP R> ?NEGATE
 #   SWAP R> ?NEGATE ;
 # Ref. dpANS-6 section 3.2.2.1.
-    head SMSLASHREM,6,"SM/REM",docolon,MSTAR
-        .word TWODUP,XOR,TOR,OVER,TOR
-        .word ABS,TOR,DABS,RFROM,UMSLASHMOD
-        .word SWAP,RFROM,QNEGATE,SWAP,RFROM,QNEGATE
-        .word EXIT
+    head smslashrem,6,"sm/rem",docolon,mstar
+        .word twodup,xor,tor,over,tor
+        .word abs,tor,dabs,rfrom,umslashmod
+        .word swap,rfrom,qnegate,swap,rfrom,qnegate
+        .word exit
 
 #C FM/MOD   d1 n1 -- n2 n3   floored signed div'n
 #   DUP >R              save divisor
@@ -152,126 +152,126 @@ DNEG1:  .word EXIT
 #       SWAP 1-           decrement quotient
 #   ELSE R> DROP THEN ;
 # Ref. dpANS-6 section 3.2.2.1.
-    head FMSLASHMOD,6,"FM/MOD",docolon,SMSLASHREM
-        .word DUP,TOR,SMSLASHREM
-        .word DUP,ZEROLESS,QBRANCH,FMMOD1
-        .word SWAP,RFROM,PLUS,SWAP,ONEMINUS
-        .word BRANCH,FMMOD2
-FMMOD1: .word RFROM,DROP
-FMMOD2: .word EXIT
+    head fmslashmod,6,"fm/mod",docolon,smslashrem
+        .word dup,tor,smslashrem
+        .word dup,zeroless,qbranch,fmmod1
+        .word swap,rfrom,plus,swap,oneminus
+        .word branch,fmmod2
+fmmod1: .word rfrom,drop
+fmmod2: .word exit
 
 #C *      n1 n2 -- n3       signed multiply
 #   M* DROP ;
-    head STAR,1,"*",docolon,FMSLASHMOD
-        .word MSTAR,DROP,EXIT
+    head star,1,"*",docolon,fmslashmod
+        .word mstar,drop,exit
 
 #C /MOD   n1 n2 -- n3 n4    signed divide/rem'dr
 #   >R S>D R> FM/MOD ;
-    head SLASHMOD,4,"/MOD",docolon,STAR
-        .word TOR,STOD,RFROM,FMSLASHMOD,EXIT
+    head slashmod,4,"/mod",docolon,star
+        .word tor,stod,rfrom,fmslashmod,exit
 
 #C /      n1 n2 -- n3       signed divide
 #   /MOD nip ;
-    head SLASH,1,"/",docolon,SLASHMOD
-        .word SLASHMOD,NIP,EXIT
+    head slash,1,"/",docolon,slashmod
+        .word slashmod,nip,exit
 
 #C MOD    n1 n2 -- n3       signed remainder
 #   /MOD DROP ;
-    head MOD,3,"MOD",docolon,SLASH
-        .word SLASHMOD,DROP,EXIT
+    head mod,3,"mod",docolon,slash
+        .word slashmod,drop,exit
 
 #C */MOD  n1 n2 n3 -- n4 n5    n1*n2/n3, rem&quot
 #   >R M* R> FM/MOD ;
-    head SSMOD,5,"*/MOD",docolon,MOD
-        .word TOR,MSTAR,RFROM,FMSLASHMOD,EXIT
+    head ssmod,5,"*/mod",docolon,mod
+        .word tor,mstar,rfrom,fmslashmod,exit
 
 #C */     n1 n2 n3 -- n4        n1*n2/n3
 #   */MOD nip ;
-    head STARSLASH,2,"*/",docolon,SSMOD
-        .word SSMOD,NIP,EXIT
+    head starslash,2,"*/",docolon,ssmod
+        .word ssmod,nip,exit
 
 #C MAX    n1 n2 -- n3       signed maximum
 #_   2DUP < IF SWAP THEN DROP ;
-    head MAX,3,"MAX",docolon,STARSLASH
-        .word TWODUP,LESS,QBRANCH,MAX1,SWAP
-MAX1:   .word DROP,EXIT
+    head max,3,"max",docolon,starslash
+        .word twodup,less,qbranch,max1,swap
+max1:   .word drop,exit
 
 #C MIN    n1 n2 -- n3       signed minimum
 #_   2DUP > IF SWAP THEN DROP ;
-    head MIN,3,"MIN",docolon,MAX
-        .word TWODUP,GREATER,QBRANCH,MIN1,SWAP
-MIN1:   .word DROP,EXIT
+    head min,3,"min",docolon,max
+        .word twodup,greater,qbranch,min1,swap
+min1:   .word drop,exit
 
 # DOUBLE OPERATORS ==============================
 
 #C 2@    a-addr -- x1 x2    fetch 2 cells
 #   DUP CELL+ @ SWAP @ ;
 #   the lower address will appear on top of stack
-    head TWOFETCH,2,"2@",docolon,MIN
-        .word DUP,CELLPLUS,FETCH,SWAP,FETCH,EXIT
+    head twofetch,2,"2@",docolon,min
+        .word dup,cellplus,fetch,swap,fetch,exit
 
 #C 2!    x1 x2 a-addr --    store 2 cells
 #   SWAP OVER ! CELL+ ! ;
 #   the top of stack is stored at the lower adrs
-    head TWOSTORE,2,"2!",docolon,TWOFETCH
-        .word SWAP,OVER,STORE,CELLPLUS,STORE,EXIT
+    head twostore,2,"2!",docolon,twofetch
+        .word swap,over,store,cellplus,store,exit
 
 #C 2DROP  x1 x2 --          drop 2 cells
 #   DROP DROP ;
-    head TWODROP,5,"2DROP",docolon,TWOSTORE
-        .word DROP,DROP,EXIT
+    head twodrop,5,"2drop",docolon,twostore
+        .word drop,drop,exit
 
 #C 2DUP   x1 x2 -- x1 x2 x1 x2   dup top 2 cells
 #   OVER OVER ;
-    head TWODUP,4,"2DUP",docolon,TWODROP
-        .word OVER,OVER,EXIT
+    head twodup,4,"2dup",docolon,twodrop
+        .word over,over,exit
 
 #C 2SWAP  x1 x2 x3 x4 -- x3 x4 x1 x2  per diagram
 #   ROT >R ROT R> ;
-    head TWOSWAP,5,"2SWAP",docolon,TWODUP
-        .word ROT,TOR,ROT,RFROM,EXIT
+    head twoswap,5,"2swap",docolon,twodup
+        .word rot,tor,rot,rfrom,exit
 
 #C 2OVER  x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2
 #   >R >R 2DUP R> R> 2SWAP ;
-    head TWOOVER,5,"2OVER",docolon,TWOSWAP
-        .word TOR,TOR,TWODUP,RFROM,RFROM
-        .word TWOSWAP,EXIT
+    head twoover,5,"2over",docolon,twoswap
+        .word tor,tor,twodup,rfrom,rfrom
+        .word twoswap,exit
 
 # INPUT/OUTPUT ==================================
 
 #C COUNT   c-addr1 -- c-addr2 u  counted->adr/len
 #   DUP CHAR+ SWAP C@ ;
-    head COUNT,5,"COUNT",docolon,TWOOVER
-        .word DUP,CHARPLUS,SWAP,CFETCH,EXIT
+    head count,5,"count",docolon,twoover
+        .word dup,charplus,swap,cfetch,exit
 
 #C CR      --               output newline
 #_   0D EMIT 0A EMIT ;
-    head CR,2,"CR",docolon,COUNT
-        .word LIT,0x0a,EMIT,EXIT
+    head cr,2,"cr",docolon,count
+        .word lit,0x0a,emit,exit
 
 #C SPACE   --               output a space
 #   BL EMIT ;
-    head SPACE,5,"SPACE",docolon,CR
-        .word BL,EMIT,EXIT
+    head space,5,"space",docolon,cr
+        .word bl,emit,exit
 
 #C SPACES   n --            output n spaces
 #   BEGIN DUP WHILE SPACE 1- REPEAT DROP ;
-    head SPACES,6,"SPACES",docolon,SPACE
-SPCS1:  .word DUP,QBRANCH,SPCS2
-        .word SPACE,ONEMINUS,BRANCH,SPCS1
-SPCS2:  .word DROP,EXIT
+    head spaces,6,"spaces",docolon,space
+spcs1:  .word dup,qbranch,spcs2
+        .word space,oneminus,branch,spcs1
+spcs2:  .word drop,exit
 
 #Z umin     u1 u2 -- u      unsigned minimum
 #_   2DUP U> IF SWAP THEN DROP ;
-    head UMIN,4,"UMIN",docolon,SPACES
-        .word TWODUP,UGREATER,QBRANCH,UMIN1,SWAP
-UMIN1:  .word DROP,EXIT
+    head umin,4,"umin",docolon,spaces
+        .word twodup,ugreater,qbranch,umin1,swap
+umin1:  .word drop,exit
 
 #Z umax    u1 u2 -- u       unsigned maximum
 # _  2DUP U< IF SWAP THEN DROP ;
-    head UMAX,4,"UMAX",docolon,UMIN
-        .word TWODUP,ULESS,QBRANCH,UMAX1,SWAP
-UMAX1:  .word DROP,EXIT
+    head umax,4,"umax",docolon,umin
+        .word twodup,uless,qbranch,umax1,swap
+umax1:  .word drop,exit
 
 #C ACCEPT  c-addr +n -- +n'  get line from term'l
 #   OVER + 1- OVER      -- sa ea a
@@ -283,50 +283,50 @@ UMAX1:  .word DROP,EXIT
 #       THEN            -- sa ea a
 #   REPEAT              -- sa ea a c
 #   DROP NIP SWAP - ;
-    head ACCEPT,6,"ACCEPT",docolon,UMAX
-        .word OVER,PLUS,ONEMINUS,OVER
-ACC1:   .word KEY,DUP,LIT,0x0a,NOTEQUAL,QBRANCH,ACC5
-        .word DUP,EMIT,DUP,LIT,8,EQUAL,QBRANCH,ACC3
-        .word DROP,ONEMINUS,TOR,OVER,RFROM,UMAX
-        .word BRANCH,ACC4
-ACC3:   .word OVER,CSTORE,ONEPLUS,OVER,UMIN
-ACC4:   .word BRANCH,ACC1
-ACC5:   .word DROP,NIP,SWAP,MINUS,EXIT
+    head accept,6,"accept",docolon,umax
+        .word over,plus,oneminus,over
+acc1:   .word key,dup,lit,0x0a,notequal,qbranch,acc5
+        .word dup,emit,dup,lit,8,equal,qbranch,acc3
+        .word drop,oneminus,tor,over,rfrom,umax
+        .word branch,acc4
+acc3:   .word over,cstore,oneplus,over,umin
+acc4:   .word branch,acc1
+acc5:   .word drop,nip,swap,minus,exit
 
 #C TYPE    c-addr +n --     type line to term'l
 #   ?DUP IF
 #     OVER + SWAP DO I C@ EMIT LOOP
 #   ELSE DROP THEN ;
-    head TYPE,4,"TYPE",docolon,ACCEPT
-        .word QDUP,QBRANCH,TYP4
-        .word OVER,PLUS,SWAP,XDO
-TYP3:   .word II,CFETCH,EMIT,XLOOP,TYP3
-        .word BRANCH,TYP5
-TYP4:   .word DROP	
-TYP5:   .word EXIT
+    head type,4,"type",docolon,accept
+        .word qdup,qbranch,typ4
+        .word over,plus,swap,xdo
+typ3:   .word ii,cfetch,emit,xloop,typ3
+        .word branch,typ5
+typ4:   .word drop
+typ5:   .word exit
 
 #Z (S")     -- c-addr u   run-time code for S"
 #   R> COUNT 2DUP + ALIGNED >R  ;
-    head XSQUOTE,4,"(S\")",docolon,TYPE
-        .word RFROM,COUNT,TWODUP,PLUS,ALIGNED
-        .word TOR
-        .word EXIT
+    head xsquote,4,"(s\")",docolon,type
+        .word rfrom,count,twodup,plus,aligned
+        .word tor
+        .word exit
 
 #C S"       --         compile in-line string
 #   COMPILE (S")  [ HEX ]
 #   22 WORD C@ 1+ ALIGNED ALLOT ; IMMEDIATE
-    immed SQUOTE,2,"S\"",docolon,XSQUOTE
-        .word LIT,XSQUOTE,COMMAXT
-        .word LIT,0x22,WORD,CFETCH,ONEPLUS
-        .word ALIGNED,ALLOT,EXIT
+    immed squote,2,"s\"",docolon,xsquote
+        .word lit,xsquote,commaxt
+        .word lit,0x22,word,cfetch,oneplus
+        .word aligned,allot,exit
 
 #C ."       --         compile string to print
 #   POSTPONE S"  POSTPONE TYPE ; IMMEDIATE
-    immed DOTQUOTE,2,".\"",docolon,SQUOTE
-        .word SQUOTE
-        .word LIT,TYPE,COMMAXT
-        .word EXIT
-        
+    immed dotquote,2,".\"",docolon,squote
+        .word squote
+        .word lit,type,commaxt
+        .word exit
+
 # NUMERIC OUTPUT ================================
 # Numeric conversion is done l.s.digit first, so
 # the output buffer is built backwards in memory.
@@ -336,104 +336,104 @@ TYP5:   .word EXIT
 
 #Z UD/MOD   ud1 u2 -- u3 ud4   32/16->32 divide
 #   >R 0 R@ UM/MOD  ROT ROT R> UM/MOD ROT ;
-    head UDSLASHMOD,6,"UD/MOD",docolon,DOTQUOTE
-        .word TOR,LIT,0,RFETCH,UMSLASHMOD,ROT,ROT
-        .word RFROM,UMSLASHMOD,ROT,EXIT
+    head udslashmod,6,"ud/mod",docolon,dotquote
+        .word tor,lit,0,rfetch,umslashmod,rot,rot
+        .word rfrom,umslashmod,rot,exit
 
 #Z UD*      ud1 d2 -- ud3      32*16->32 multiply
 #   DUP >R UM* DROP  SWAP R> UM* ROT + ;
-    head UDSTAR,3,"UD*",docolon,UDSLASHMOD
-        .word DUP,TOR,UMSTAR,DROP
-        .word SWAP,RFROM,UMSTAR,ROT,PLUS,EXIT
+    head udstar,3,"ud*",docolon,udslashmod
+        .word dup,tor,umstar,drop
+        .word swap,rfrom,umstar,rot,plus,exit
 
 #C HOLD  char --        add char to output string
 #   -1 HP +!  HP @ C! ;
-    head HOLD,4,"HOLD",docolon,UDSTAR
-        .word LIT,-1,HP,PLUSSTORE
-        .word HP,FETCH,CSTORE,EXIT
+    head hold,4,"hold",docolon,udstar
+        .word lit,-1,hp,plusstore
+        .word hp,fetch,cstore,exit
 
 #C <#    --             begin numeric conversion
 #   PAD HP ! ;          (initialize Hold Pointer)
-    head LESSNUM,2,"<#",docolon,HOLD
-        .word PAD,HP,STORE,EXIT
+    head lessnum,2,"<#",docolon,hold
+        .word pad,hp,store,exit
 
 #Z >digit   n -- c      convert to 0..9A..Z
 #   [ HEX ] DUP 9 > 7 AND + 30 + ;
-    head TODIGIT,6,">DIGIT",docolon,LESSNUM
-        .word DUP,LIT,9,GREATER,LIT,7,AND,PLUS
-        .word LIT,0x30,PLUS,EXIT
+    head todigit,6,">digit",docolon,lessnum
+        .word dup,lit,9,greater,lit,7,and,plus
+        .word lit,0x30,plus,exit
 
 #C #     ud1 -- ud2     convert 1 digit of output
 #   BASE @ UD/MOD ROT >digit HOLD ;
-    head NUM,1,"#",docolon,TODIGIT
-        .word BASE,FETCH,UDSLASHMOD,ROT,TODIGIT
-        .word HOLD,EXIT
+    head num,1,"#",docolon,todigit
+        .word base,fetch,udslashmod,rot,todigit
+        .word hold,exit
 
 #C #S    ud1 -- ud2     convert remaining digits
 #   BEGIN # 2DUP OR 0= UNTIL ;
-    head NUMS,2,"#S",docolon,NUM
-NUMS1:  .word NUM,TWODUP,OR,ZEROEQUAL,QBRANCH,NUMS1
-        .word EXIT
+    head nums,2,"#s",docolon,num
+nums1:  .word num,twodup,or,zeroequal,qbranch,nums1
+        .word exit
 
 #C #>    ud1 -- c-addr u    end conv., get string
 #   2DROP HP @ PAD OVER - ;
-    head NUMGREATER,2,"#>",docolon,NUMS
-        .word TWODROP,HP,FETCH,PAD,OVER,MINUS
-        .word EXIT
+    head numgreater,2,"#>",docolon,nums
+        .word twodrop,hp,fetch,pad,over,minus
+        .word exit
 
 #C SIGN  n --           add minus sign if n<0
 #_   0< IF 2D HOLD THEN ;
-    head SIGN,4,"SIGN",docolon,NUMGREATER
-        .word ZEROLESS,QBRANCH,SIGN1,LIT,0x2D,HOLD
-SIGN1:  .word EXIT
+    head sign,4,"sign",docolon,numgreater
+        .word zeroless,qbranch,sign1,lit,0x2d,hold
+sign1:  .word exit
 
 #C U.    u --           display u unsigned
 #   <# 0 #S #> TYPE SPACE ;
-    head UDOT,2,"U.",docolon,SIGN
-        .word LESSNUM,LIT,0,NUMS,NUMGREATER,TYPE
-        .word SPACE,EXIT
+    head udot,2,"u.",docolon,sign
+        .word lessnum,lit,0,nums,numgreater,type
+        .word space,exit
 
 #C .     n --           display n signed
 #   <# DUP ABS 0 #S ROT SIGN #> TYPE SPACE ;
-    head DOT,1,".",docolon,UDOT
-        .word LESSNUM,DUP,ABS,LIT,0,NUMS
-        .word ROT,SIGN,NUMGREATER
-        .word TYPE,SPACE,EXIT
+    head dot,1,".",docolon,udot
+        .word lessnum,dup,abs,lit,0,nums
+        .word rot,sign,numgreater
+        .word type,space,exit
 
 #C DECIMAL  --      set number base to decimal
 #   10 BASE ! ;
-    head DECIMAL,7,"DECIMAL",docolon,DOT
-        .word LIT,10,BASE,STORE,EXIT
+    head decimal,7,"decimal",docolon,dot
+        .word lit,10,base,store,exit
 
 #X HEX     --       set number base to hex
 #   16 BASE ! ;
-    head HEX,3,"HEX",docolon,DECIMAL
-        .word LIT,16,BASE,STORE,EXIT
+    head hex,3,"hex",docolon,decimal
+        .word lit,16,base,store,exit
 
 # DICTIONARY MANAGEMENT =========================
 
 #C HERE    -- addr      returns dictionary ptr
 #   DP @ ;
-    head HERE,4,"HERE",docolon,HEX
-        .word DP,FETCH,EXIT
+    head here,4,"here",docolon,hex
+        .word dp,fetch,exit
 
 #C ALLOT   n --         allocate n bytes in dict
 #   DP +! ;
-    head ALLOT,5,"ALLOT",docolon,HERE
-        .word DP,PLUSSTORE,EXIT
+    head allot,5,"allot",docolon,here
+        .word dp,plusstore,exit
 
 # Note: , and C, are only valid for combined
 # Code and Data spaces.
 
 #C ,    x --           append cell to dict
 #   HERE ! 1 CELLS ALLOT ;
-    head COMMA,1,",",docolon,ALLOT
-        .word HERE,STORE,LIT,1,CELLS,ALLOT,EXIT
+    head comma,1,",",docolon,allot
+        .word here,store,lit,1,cells,allot,exit
 
 #C C,   char --        append char to dict
 #   HERE C! 1 CHARS ALLOT ;
-    head CCOMMA,2,"C,",docolon,COMMA
-        .word HERE,CSTORE,LIT,1,CHARS,ALLOT,EXIT
+    head ccomma,2,"c,",docolon,comma
+        .word here,cstore,lit,1,chars,allot,exit
 
 # INTERPRETER ===================================
 # Note that NFA>LFA, NFA>CFA, IMMED?, and FIND
@@ -443,18 +443,18 @@ SIGN1:  .word EXIT
 
 #C SOURCE   -- adr n    current input buffer
 #   'SOURCE 2@ ;        length is at lower adrs
-    head SOURCE,6,"SOURCE",docolon,CCOMMA
-        .word TICKSOURCE,TWOFETCH,EXIT
+    head source,6,"source",docolon,ccomma
+        .word ticksource,twofetch,exit
 
 #X /STRING  a u n -- a+n u-n   trim string
 #   ROT OVER + ROT ROT - ;
-    head SLASHSTRING,7,"/STRING",docolon,SOURCE
-        .word ROT,OVER,PLUS,ROT,ROT,MINUS,EXIT
+    head slashstring,7,"/string",docolon,source
+        .word rot,over,plus,rot,rot,minus,exit
 
 #Z >counted  src n dst --     copy to counted str
 #   2DUP C! CHAR+ SWAP CMOVE ;
-    head TOCOUNTED,8,">COUNTED",docolon,SLASHSTRING
-        .word TWODUP,CSTORE,CHARPLUS,SWAP,CMOVE,EXIT
+    head tocounted,8,">counted",docolon,slashstring
+        .word twodup,cstore,charplus,swap,cmove,exit
 
 #C WORD   char -- c-addr n   word delim'd by char
 #   DUP  SOURCE >IN @ /STRING   -- c c adr n
@@ -466,35 +466,35 @@ SIGN1:  .word EXIT
 #   HERE >counted               --
 #   HERE                        -- a
 #   BL OVER COUNT + C! ;    append trailing blank
-    head WORD,4,"WORD",docolon,TOCOUNTED
-        .word DUP,SOURCE,TOIN,FETCH,SLASHSTRING
-        .word DUP,TOR,ROT,SKIP
-        .word OVER,TOR,ROT,SCAN
-        .word DUP,QBRANCH,WORD1,CHARMINUS
-WORD1:  .word RFROM,RFROM,ROT,MINUS,TOIN,PLUSSTORE
-        .word TUCK,MINUS
-        .word HERE,TOCOUNTED,HERE
-        .word BL,OVER,COUNT,PLUS,CSTORE,EXIT
+    head word,4,"word",docolon,tocounted
+        .word dup,source,toin,fetch,slashstring
+        .word dup,tor,rot,skip
+        .word over,tor,rot,scan
+        .word dup,qbranch,word1,charminus
+word1:  .word rfrom,rfrom,rot,minus,toin,plusstore
+        .word tuck,minus
+        .word here,tocounted,here
+        .word bl,over,count,plus,cstore,exit
 
 #Z NFA>LFA   nfa -- lfa    name adr -> link field
 #_   3 - ;
 # Here -8
-    head NFATOLFA,7,"NFA>LFA",docolon,WORD
-        .word LIT,8,MINUS,EXIT
+    head nfatolfa,7,"nfa>lfa",docolon,word
+        .word lit,8,minus,exit
 
 #Z NFA>CFA   nfa -- cfa    name adr -> code field
 #   COUNT 7F AND + ;       mask off 'smudge' bit
 # Needs testing
-    head NFATOCFA,7,"NFA>CFA",docolon,NFATOLFA
-        .word COUNT,LIT,0x7F,AND,PLUS
-        .word ALIGNED
-        .word EXIT
+    head nfatocfa,7,"nfa>cfa",docolon,nfatolfa
+        .word count,lit,0x7f,and,plus
+        .word aligned
+        .word exit
 
 #Z IMMED?    nfa -- f      fetch immediate flag
 #_   1- C@ ;                     nonzero if immed
 # Here -4
-    head IMMEDQ,6,"IMMED?",docolon,NFATOCFA
-        .word LIT,4,MINUS,FETCH,EXIT
+    head immedq,6,"immed?",docolon,nfatocfa
+        .word lit,4,minus,fetch,exit
 
 #C FIND   c-addr -- c-addr 0   if not found
 #C                  xt  1      if immediate
@@ -512,36 +512,36 @@ WORD1:  .word RFROM,RFROM,ROT,MINUS,TOIN,PLUSSTORE
 #       SWAP IMMED?            -- xt iflag
 #_       0= 1 OR                -- xt 1/-1
 #   THEN ;
-    head FIND,4,"FIND",docolon,IMMEDQ
-        .word LATEST,FETCH
-FIND1:  .word TWODUP,OVER,CFETCH,CHARPLUS
-        .word SEQUAL,DUP,QBRANCH,FIND2
-        .word DROP,NFATOLFA,FETCH,DUP
-FIND2:  .word ZEROEQUAL,QBRANCH,FIND1
-        .word DUP,QBRANCH,FIND3
-        .word NIP,DUP,NFATOCFA
-        .word SWAP,IMMEDQ,ZEROEQUAL,LIT,1,OR
-FIND3:  .word EXIT
+    head find,4,"find",docolon,immedq
+        .word latest,fetch
+find1:  .word twodup,over,cfetch,charplus
+        .word sequal,dup,qbranch,find2
+        .word drop,nfatolfa,fetch,dup
+find2:  .word zeroequal,qbranch,find1
+        .word dup,qbranch,find3
+        .word nip,dup,nfatocfa
+        .word swap,immedq,zeroequal,lit,1,or
+find3:  .word exit
 
 #C LITERAL  x --        append numeric literal
 #   STATE @ IF ['] LIT ,XT , THEN ; IMMEDIATE
 # This tests STATE so that it can also be used
 # interpretively.  (ANSI doesn't require this.)
-    immed LITERAL,7,"LITERAL",docolon,FIND
-        .word STATE,FETCH,QBRANCH,LITER1
-        .word LIT,LIT,COMMAXT,COMMA
-LITER1: .word EXIT
+    immed literal,7,"literal",docolon,find
+        .word state,fetch,qbranch,liter1
+        .word lit,lit,commaxt,comma
+liter1: .word exit
 
 #Z DIGIT?   c -- n -1   if c is a valid digit
 #Z            -- x  0   otherwise
 #   [ HEX ] DUP 39 > 100 AND +     silly looking
 #   DUP 140 > 107 AND -   30 -     but it works!
 #   DUP BASE @ U< ;
-    head DIGITQ,6,"DIGIT?",docolon,LITERAL
-        .word DUP,LIT,0x39,GREATER,LIT,0x100,AND,PLUS
-        .word DUP,LIT,0x140,GREATER,LIT,0x107,AND
-        .word MINUS,LIT,0x30,MINUS
-        .word DUP,BASE,FETCH,ULESS,EXIT
+    head digitq,6,"digit?",docolon,literal
+        .word dup,lit,0x39,greater,lit,0x100,and,plus
+        .word dup,lit,0x140,greater,lit,0x107,and
+        .word minus,lit,0x30,minus
+        .word dup,base,fetch,uless,exit
 
 #Z ?SIGN   adr n -- adr' n' f  get optional sign
 #Z  advance adr/n if sign; return NZ if negative
@@ -550,11 +550,11 @@ LITER1: .word EXIT
 #   DUP IF 1+               -- +=0, -=+2
 #       >R 1 /STRING R>     -- adr' n' f
 #   THEN ;
-    head QSIGN,5,"?SIGN",docolon,DIGITQ
-        .word OVER,CFETCH,LIT,0x2C,MINUS,DUP,ABS
-        .word LIT,1,EQUAL,AND,DUP,QBRANCH,QSIGN1
-        .word ONEPLUS,TOR,LIT,1,SLASHSTRING,RFROM
-QSIGN1: .word EXIT
+    head qsign,5,"?sign",docolon,digitq
+        .word over,cfetch,lit,0x2c,minus,dup,abs
+        .word lit,1,equal,and,dup,qbranch,qsign1
+        .word oneplus,tor,lit,1,slashstring,rfrom
+qsign1: .word exit
 
 #C >NUMBER  ud adr u -- ud' adr' u'
 #C                      convert string to number
@@ -566,14 +566,14 @@ QSIGN1: .word EXIT
 #       R> M+ 2SWAP
 #_       1 /STRING
 #   REPEAT ;
-    head TONUMBER,7,">NUMBER",docolon,QSIGN
-TONUM1: .word DUP,QBRANCH,TONUM3
-        .word OVER,CFETCH,DIGITQ
-        .word ZEROEQUAL,QBRANCH,TONUM2,DROP,EXIT
-TONUM2: .word TOR,TWOSWAP,BASE,FETCH,UDSTAR
-        .word RFROM,MPLUS,TWOSWAP
-        .word LIT,1,SLASHSTRING,BRANCH,TONUM1
-TONUM3: .word EXIT
+    head tonumber,7,">number",docolon,qsign
+tonum1: .word dup,qbranch,tonum3
+        .word over,cfetch,digitq
+        .word zeroequal,qbranch,tonum2,drop,exit
+tonum2: .word tor,twoswap,base,fetch,udstar
+        .word rfrom,mplus,twoswap
+        .word lit,1,slashstring,branch,tonum1
+tonum3: .word exit
 
 #Z ?NUMBER  c-addr -- n -1      string->number
 #Z                 -- c-addr 0  if convert error
@@ -583,14 +583,14 @@ TONUM3: .word EXIT
 #   ELSE 2DROP NIP R>
 #       IF NEGATE THEN  -1  -- n -1   (ok)
 #   THEN ;
-    head QNUMBER,7,"?NUMBER",docolon,TONUMBER
-        .word DUP,LIT,0,DUP,ROT,COUNT
-        .word QSIGN,TOR,TONUMBER,QBRANCH,QNUM1
-        .word RFROM,TWODROP,TWODROP,LIT,0
-        .word BRANCH,QNUM3
-QNUM1:  .word TWODROP,NIP,RFROM,QBRANCH,QNUM2,NEGATE
-QNUM2:  .word LIT,-1
-QNUM3:  .word EXIT
+    head qnumber,7,"?number",docolon,tonumber
+        .word dup,lit,0,dup,rot,count
+        .word qsign,tor,tonumber,qbranch,qnum1
+        .word rfrom,twodrop,twodrop,lit,0
+        .word branch,qnum3
+qnum1:  .word twodrop,nip,rfrom,qbranch,qnum2,negate
+qnum2:  .word lit,-1
+qnum3:  .word exit
 
 #Z INTERPRET    i*x c-addr u -- j*x
 #Z                      interpret given buffer
@@ -610,34 +610,34 @@ QNUM3:  .word EXIT
 #           THEN
 #       THEN
 #   REPEAT DROP ;
-    head INTERPRET,9,"INTERPRET",docolon,QNUMBER
-        .word TICKSOURCE,TWOSTORE,LIT,0,TOIN,STORE
-INTER1: .word BL,WORD,DUP,CFETCH,QBRANCH,INTER9
-        .word FIND
-        .word QDUP,QBRANCH,INTER4
-        .word ONEPLUS,STATE,FETCH
-        .word ZEROEQUAL,OR
-        .word QBRANCH,INTER2
-        .word EXECUTE
-        .word BRANCH,INTER3
-INTER2: .word COMMAXT
-INTER3: .word BRANCH,INTER8
-INTER4: .word QNUMBER,QBRANCH,INTER5
-        .word LITERAL,BRANCH,INTER6
-INTER5: .word COUNT,TYPE,LIT,0x3F,EMIT,CR,ABORT
-INTER6: 
-INTER8: .word BRANCH,INTER1
-INTER9: .word DROP,EXIT
+    head interpret,9,"interpret",docolon,qnumber
+        .word ticksource,twostore,lit,0,toin,store
+inter1: .word bl,word,dup,cfetch,qbranch,inter9
+        .word find
+        .word qdup,qbranch,inter4
+        .word oneplus,state,fetch
+        .word zeroequal,or
+        .word qbranch,inter2
+        .word execute
+        .word branch,inter3
+inter2: .word commaxt
+inter3: .word branch,inter8
+inter4: .word qnumber,qbranch,inter5
+        .word literal,branch,inter6
+inter5: .word count,type,lit,0x3f,emit,cr,abort
+inter6:
+inter8: .word branch,inter1
+inter9: .word drop,exit
 
 #C EVALUATE  i*x c-addr u -- j*x  interprt string
 #   'SOURCE 2@ >R >R  >IN @ >R
 #   INTERPRET
 #   R> >IN !  R> R> 'SOURCE 2! ;
-    head EVALUATE,8,"EVALUATE",docolon,INTERPRET
-        .word TICKSOURCE,TWOFETCH,TOR,TOR
-        .word TOIN,FETCH,TOR,INTERPRET
-        .word RFROM,TOIN,STORE,RFROM,RFROM
-        .word TICKSOURCE,TWOSTORE,EXIT
+    head evaluate,8,"evaluate",docolon,interpret
+        .word ticksource,twofetch,tor,tor
+        .word toin,fetch,tor,interpret
+        .word rfrom,toin,store,rfrom,rfrom
+        .word ticksource,twostore,exit
 
 #C QUIT     --    R: i*x --    interpret from kbd
 #   L0 LP !  R0 RP!   0 STATE !
@@ -646,67 +646,67 @@ INTER9: .word DROP,EXIT
 #       INTERPRET
 #       STATE @ 0= IF CR ." OK" THEN
 #   AGAIN ;
-    head QUIT,4,"QUIT",docolon,EVALUATE
-        .word L0,LP,STORE
-        .word R0,RPSTORE,LIT,0,STATE,STORE
-QUIT1:  .word TIB,DUP,TIBSIZE,ACCEPT,SPACE
-        .word INTERPRET
-        .word STATE,FETCH,ZEROEQUAL,QBRANCH,QUIT2
-        .word CR,XSQUOTE
+    head quit,4,"quit",docolon,evaluate
+        .word l0,lp,store
+        .word r0,rpstore,lit,0,state,store
+quit1:  .word tib,dup,tibsize,accept,space
+        .word interpret
+        .word state,fetch,zeroequal,qbranch,quit2
+        .word cr,xsquote
         .byte 3
-        .ascii "OK "
+        .ascii "ok "
         .align
         /* .align would add 4 bytes here */
-        .word TYPE
-        /* .word LIT,0x1e,EMIT      drop serial receive queue */
-QUIT2:  .word BRANCH,QUIT1
+        .word type
+        /* .word lit,0x1e,emit      drop serial receive queue */
+quit2:  .word branch,quit1
 
 #C ABORT    i*x --   R: j*x --   clear stk & QUIT
 #   S0 SP!  QUIT ;
-    head ABORT,5,"ABORT",docolon,QUIT
-        /* .word LIT,0x1e,EMIT      drop serial receive queue */
-        .word S0,SPSTORE,QUIT   /* QUIT never returns */
+    head abort,5,"abort",docolon,quit
+        /* .word lit,0x1e,emit      drop serial receive queue */
+        .word s0,spstore,quit   /* quit never returns */
 
 #Z ?ABORT   f c-addr u --      abort & print msg
 #   ROT IF TYPE ABORT THEN 2DROP ;
-    head QABORT,6,"?ABORT",docolon,ABORT
-        .word ROT,QBRANCH,QABO1,TYPE,ABORT
-QABO1:  .word TWODROP,EXIT
+    head qabort,6,"?abort",docolon,abort
+        .word rot,qbranch,qabo1,type,abort
+qabo1:  .word twodrop,exit
 
 #C ABORT"  i*x 0  -- i*x   R: j*x -- j*x  x1=0
 #C         i*x x1 --       R: j*x --      x1<>0
 #   POSTPONE S" POSTPONE ?ABORT ; IMMEDIATE
-    immed ABORTQUOTE,6,"ABORT\"",docolon,QABORT
-        .word SQUOTE
-        .word LIT,QABORT,COMMAXT
-        .word EXIT
+    immed abortquote,6,"abort\"",docolon,qabort
+        .word squote
+        .word lit,qabort,commaxt
+        .word exit
 
 #C '    -- xt           find word in dictionary
 #   BL WORD FIND
 #_   0= ABORT" ?" ;
-    head TICK,1,"'",docolon,ABORTQUOTE
-        .word BL,WORD,FIND,ZEROEQUAL,XSQUOTE
+    head tick,1,"'",docolon,abortquote
+        .word bl,word,find,zeroequal,xsquote
         .byte 1
         .ascii "?"
         .align
-        .word QABORT,EXIT
+        .word qabort,exit
 
 #C CHAR   -- char           parse ASCII character
 #   BL WORD 1+ C@ ;
-    head CHAR,4,"CHAR",docolon,TICK
-        .word BL,WORD,ONEPLUS,CFETCH,EXIT
+    head char,4,"char",docolon,tick
+        .word bl,word,oneplus,cfetch,exit
 
 #C [CHAR]   --          compile character literal
 #   CHAR  ['] LIT ,XT  , ; IMMEDIATE
-    immed BRACCHAR,6,"[CHAR]",docolon,CHAR
-        .word CHAR
-        .word LIT,LIT,COMMAXT
-        .word COMMA,EXIT
+    immed bracchar,6,"[char]",docolon,char
+        .word char
+        .word lit,lit,commaxt
+        .word comma,exit
 
 #C (    --                     skip input until )
 #   [ HEX ] 29 WORD DROP ; IMMEDIATE
-    immed PAREN,1,"(",docolon,BRACCHAR
-        .word LIT,0x29,WORD,DROP,EXIT
+    immed paren,1,"(",docolon,bracchar
+        .word lit,0x29,word,drop,exit
 
 # COMPILER ======================================
 
@@ -716,85 +716,85 @@ QABO1:  .word TWODROP,EXIT
 #   BL WORD C@ 1+ ALLOT         name field
 #   docreate ,CF                code field
 # It's a bit different there
-    head CREATE,6,"CREATE",docolon,PAREN
-        .word LATEST,FETCH,COMMA,LIT,0,COMMA
-        .word HERE,LATEST,STORE
-        .word BL,WORD,CFETCH,ONEPLUS,ALIGNED,ALLOT
-        .word LIT,docreate,COMMACF
-        .word EXIT
+    head create,6,"create",docolon,paren
+        .word latest,fetch,comma,lit,0,comma
+        .word here,latest,store
+        .word bl,word,cfetch,oneplus,aligned,allot
+        .word lit,docreate,commacf
+        .word exit
 
 #Z (DOES>)  --      run-time action of DOES>
 #   R>              adrs of headless DOES> def'n
 #   LATEST @ NFA>CFA    code field to fix up
 #   !CF ;
-    head XDOES,7,"(DOES>)",docolon,CREATE
-        .word RFROM,LATEST,FETCH,NFATOCFA,STORECF
-        .word EXIT
+    head xdoes,7,"(does>)",docolon,create
+        .word rfrom,latest,fetch,nfatocfa,storecf
+        .word exit
 
 #C DOES>    --      change action of latest def'n
 #   COMPILE (DOES>)
 #   dodoes ,CF ; IMMEDIATE
-    immed DOES,5,"DOES>",docolon,XDOES
-        .word LIT,XDOES,COMMAXT
-# compiles "mov r3, lr"        
-        .word LIT,0xE1A0300E,COMMA
-        .word LIT,dodoes,COMMACF,EXIT
+    immed does,5,"does>",docolon,xdoes
+        .word lit,xdoes,commaxt
+# compiles "mov r3, lr"
+        .word lit,0xe1a0300e,comma
+        .word lit,dodoes,commacf,exit
 
 #C RECURSE  --      recurse current definition
 #   LATEST @ NFA>CFA ,XT ; IMMEDIATE
-    immed RECURSE,7,"RECURSE",docolon,DOES
-        .word LATEST,FETCH,NFATOCFA,COMMAXT,EXIT
+    immed recurse,7,"recurse",docolon,does
+        .word latest,fetch,nfatocfa,commaxt,exit
 
 #C [        --      enter interpretive state
 #_   0 STATE ! ; IMMEDIATE
-    immed LEFTBRACKET,1,"[",docolon,RECURSE
-        .word LIT,0,STATE,STORE,EXIT
+    immed leftbracket,1,"[",docolon,recurse
+        .word lit,0,state,store,exit
 
 #C ]        --      enter compiling state
 #_   -1 STATE ! ;
-    head RIGHTBRACKET,1,"]",docolon,LEFTBRACKET
-        .word LIT,-1,STATE,STORE,EXIT
+    head rightbracket,1,"]",docolon,leftbracket
+        .word lit,-1,state,store,exit
 
 #Z HIDE     --      "hide" latest definition
 #   LATEST @ DUP C@ 80 OR SWAP C! ;
-    head HIDE,4,"HIDE",docolon,RIGHTBRACKET
-        .word LATEST,FETCH,DUP,CFETCH,LIT,0x80,OR
-        .word SWAP,CSTORE,EXIT
+    head hide,4,"hide",docolon,rightbracket
+        .word latest,fetch,dup,cfetch,lit,0x80,or
+        .word swap,cstore,exit
 
 #Z REVEAL   --      "reveal" latest definition
 #   LATEST @ DUP C@ 7F AND SWAP C! ;
-    head REVEAL,6,"REVEAL",docolon,HIDE
-        .word LATEST,FETCH,DUP,CFETCH,LIT,0x7F,AND
-        .word SWAP,CSTORE,EXIT
+    head reveal,6,"reveal",docolon,hide
+        .word latest,fetch,dup,cfetch,lit,0x7f,and
+        .word swap,cstore,exit
 
 #C IMMEDIATE   --   make last def'n immediate
 #_   1 LATEST @ 1- C! ;   set immediate flag
 # It's a bit different there
-    head IMMEDIATE,9,"IMMEDIATE",docolon,REVEAL
-        .word LIT,1,LATEST,FETCH,LIT,4,MINUS,STORE
-        .word EXIT
+    head immediate,9,"immediate",docolon,reveal
+        .word lit,1,latest,fetch,lit,4,minus,store
+        .word exit
 
 #C :        --      begin a colon definition
 #   CREATE HIDE ] !COLON ;
-    head COLON,1,":",docolon,IMMEDIATE
-        .word CREATE,HIDE,RIGHTBRACKET,STORCOLON
-        .word EXIT
+    head colon,1,":",docolon,immediate
+        .word create,hide,rightbracket,storcolon
+        .word exit
 
 #C ;
 #   REVEAL  ,EXIT
 #   POSTPONE [  ; IMMEDIATE
 #    immed SEMICOLON,1,";",docolon,COLON
 .align
-.word link_COLON
+.word link_colon
 .word 1
-link_SEMICOLON:
+link_semicolon:
 .byte 1
 .byte 0x3b
 .align
-SEMICOLON: 
+semicolon:
 	bl 	docolon
-        .word REVEAL,CEXIT
-        .word LEFTBRACKET,EXIT
+        .word reveal,cexit
+        .word leftbracket,exit
 
 #C [']  --         find word & compile as literal
 #   '  ['] LIT ,XT  , ; IMMEDIATE
@@ -804,10 +804,10 @@ SEMICOLON:
 # (where xxt is the execution token of word xxx).
 # When the colon definition executes, xxt will
 # be put on the stack.  (All xt's are one cell.)
-    immed BRACTICK,3,"[']",docolon,SEMICOLON
-        .word TICK               /* get xt of 'xxx' */
-        .word LIT,LIT,COMMAXT    /* append LIT action */
-        .word COMMA,EXIT         /* append xt literal */
+    immed bractick,3,"[']",docolon,semicolon
+        .word tick               /* get xt of 'xxx' */
+        .word lit,lit,commaxt    /* append lit action */
+        .word comma,exit         /* append xt literal */
 
 #C POSTPONE  --   postpone compile action of word
 #   BL WORD FIND
@@ -818,16 +818,16 @@ SEMICOLON:
 #       ['] ,XT ,XT         to current definition
 #   ELSE  ,XT      immed: compile into cur. def'n
 #   THEN ; IMMEDIATE
-    immed POSTPONE,8,"POSTPONE",docolon,BRACTICK
-        .word BL,WORD,FIND,DUP,ZEROEQUAL,XSQUOTE
+    immed postpone,8,"postpone",docolon,bractick
+        .word bl,word,find,dup,zeroequal,xsquote
         .byte 1
         .ascii "?"
         .align
-        .word QABORT,ZEROLESS,QBRANCH,POST1
-        .word LIT,LIT,COMMAXT,COMMA
-        .word LIT,COMMAXT,COMMAXT,BRANCH,POST2
-POST1:  .word COMMAXT
-POST2:  .word EXIT
+        .word qabort,zeroless,qbranch,post1
+        .word lit,lit,commaxt,comma
+        .word lit,commaxt,commaxt,branch,post2
+post1:  .word commaxt
+post2:  .word exit
 
 #Z COMPILE   --   append inline execution token
 #   R> DUP CELL+ >R @ ,XT ;
@@ -835,9 +835,9 @@ POST2:  .word EXIT
 # this word was created to combine the actions
 # of LIT and ,XT.  It takes an inline literal
 # execution token and appends it to the dict.
-    head COMPILE,7,"COMPILE",docolon,POSTPONE
-        .word RFROM,DUP,CELLPLUS,TOR
-        .word FETCH,COMMAXT,EXIT
+    head compile,7,"compile",docolon,postpone
+        .word rfrom,dup,cellplus,tor
+        .word fetch,commaxt,exit
 # N.B.: not used in the current implementation
 
 # CONTROL STRUCTURES ============================
@@ -845,130 +845,130 @@ POST2:  .word EXIT
 #C IF       -- adrs    conditional forward branch
 #   ['] qbranch ,BRANCH  HERE DUP ,DEST ;
 #   IMMEDIATE
-    immed IF,2,"IF",docolon,COMPILE
-        .word LIT,QBRANCH,COMMABRANCH
-        .word HERE,DUP,COMMADEST,EXIT
+    immed if,2,"if",docolon,compile
+        .word lit,qbranch,commabranch
+        .word here,dup,commadest,exit
 
 #C THEN     adrs --        resolve forward branch
 #   HERE SWAP !DEST ; IMMEDIATE
-    immed THEN,4,"THEN",docolon,IF
-        .word HERE,SWAP,STOREDEST,EXIT
+    immed then,4,"then",docolon,if
+        .word here,swap,storedest,exit
 
 #C ELSE     adrs1 -- adrs2    branch for IF..ELSE
 #   ['] branch ,BRANCH  HERE DUP ,DEST
 #   SWAP  POSTPONE THEN ; IMMEDIATE
-    immed ELSE,4,"ELSE",docolon,THEN
-        .word LIT,BRANCH,COMMABRANCH
-        .word HERE,DUP,COMMADEST
-        .word SWAP,THEN,EXIT
+    immed else,4,"else",docolon,then
+        .word lit,branch,commabranch
+        .word here,dup,commadest
+        .word swap,then,exit
 
 #C BEGIN    -- adrs        target for bwd. branch
 #   HERE ; IMMEDIATE
-    immed BEGIN,5,"BEGIN",docolon,ELSE
-        .word HERE,EXIT
+    immed begin,5,"begin",docolon,else
+        .word here,exit
 
 #C UNTIL    adrs --   conditional backward branch
 #   ['] qbranch ,BRANCH  ,DEST ; IMMEDIATE
 #   conditional backward branch
-    immed UNTIL,5,"UNTIL",docolon,BEGIN
-        .word LIT,QBRANCH,COMMABRANCH
-        .word COMMADEST,EXIT
+    immed until,5,"until",docolon,begin
+        .word lit,qbranch,commabranch
+        .word commadest,exit
 
 #X AGAIN    adrs --      uncond'l backward branch
 #   ['] branch ,BRANCH  ,DEST ; IMMEDIATE
 #   unconditional backward branch
-    immed AGAIN,5,"AGAIN",docolon,UNTIL
-        .word LIT,BRANCH,COMMABRANCH
-        .word COMMADEST,EXIT
+    immed again,5,"again",docolon,until
+        .word lit,branch,commabranch
+        .word commadest,exit
 
 #C WHILE    -- adrs         branch for WHILE loop
 #   POSTPONE IF ; IMMEDIATE
-    immed WHILE,5,"WHILE",docolon,AGAIN
-        .word IF,EXIT
+    immed while,5,"while",docolon,again
+        .word if,exit
 
 #C REPEAT   adrs1 adrs2 --     resolve WHILE loop
 #   SWAP POSTPONE AGAIN POSTPONE THEN ; IMMEDIATE
-    immed REPEAT,6,"REPEAT",docolon,WHILE
-        .word SWAP,AGAIN,THEN,EXIT
-        
+    immed repeat,6,"repeat",docolon,while
+        .word swap,again,then,exit
+
 #Z >L   x --   L: -- x        move to leave stack
 #   CELL LP +!  LP @ ! ;      (L stack grows up)
-    head TOL,2,">L",docolon,REPEAT
-        .word CELL,LP,PLUSSTORE,LP,FETCH,STORE,EXIT
+    head tol,2,">l",docolon,repeat
+        .word cell,lp,plusstore,lp,fetch,store,exit
 
 #Z L>   -- x   L: x --      move from leave stack
 #   LP @ @  CELL NEGATE LP +! ;
-    head LFROM,2,"L>",docolon,TOL
-        .word LP,FETCH,FETCH
-        .word CELL,NEGATE,LP,PLUSSTORE,EXIT
+    head lfrom,2,"l>",docolon,tol
+        .word lp,fetch,fetch
+        .word cell,negate,lp,plusstore,exit
 
 #C DO       -- adrs   L: -- 0
 #   ['] xdo ,XT   HERE     target for bwd branch
 #_   0 >L ; IMMEDIATE           marker for LEAVEs
-    immed DO,2,"DO",docolon,LFROM
-        .word LIT,XDO,COMMAXT,HERE
-        .word LIT,0,TOL,EXIT
+    immed do,2,"do",docolon,lfrom
+        .word lit,xdo,commaxt,here
+        .word lit,0,tol,exit
 
 #Z ENDLOOP   adrs xt --   L: 0 a1 a2 .. aN --
 #   ,BRANCH  ,DEST                backward loop
 #   BEGIN L> ?DUP WHILE POSTPONE THEN REPEAT ;
 #                                 resolve LEAVEs
 # This is a common factor of LOOP and +LOOP.
-    head ENDLOOP,7,"ENDLOOP",docolon,DO
-        .word COMMABRANCH,COMMADEST
-LOOP1:  .word LFROM,QDUP,QBRANCH,LOOP2
-        .word THEN,BRANCH,LOOP1
-LOOP2:  .word EXIT
+    head endloop,7,"endloop",docolon,do
+        .word commabranch,commadest
+loop1:  .word lfrom,qdup,qbranch,loop2
+        .word then,branch,loop1
+loop2:  .word exit
 
 #C LOOP    adrs --   L: 0 a1 a2 .. aN --
 #   ['] xloop ENDLOOP ;  IMMEDIATE
-    immed LOOP,4,"LOOP",docolon,ENDLOOP
-        .word LIT,XLOOP,ENDLOOP,EXIT
+    immed loop,4,"loop",docolon,endloop
+        .word lit,xloop,endloop,exit
 
 #C +LOOP   adrs --   L: 0 a1 a2 .. aN --
 #   ['] xplusloop ENDLOOP ;  IMMEDIATE
-    immed PLUSLOOP,5,"+LOOP",docolon,LOOP
-        .word LIT,XPLUSLOOP,ENDLOOP,EXIT
+    immed plusloop,5,"+loop",docolon,loop
+        .word lit,xplusloop,endloop,exit
 
 #C LEAVE    --    L: -- adrs
 #   ['] UNLOOP ,XT
 #   ['] branch ,BRANCH   HERE DUP ,DEST  >L
 #   ; IMMEDIATE      unconditional forward branch
-    immed LEAVE,5,"LEAVE",docolon,PLUSLOOP
-        .word LIT,UNLOOP,COMMAXT
-        .word LIT,BRANCH,COMMABRANCH
-        .word HERE,DUP,COMMADEST,TOL,EXIT
+    immed leave,5,"leave",docolon,plusloop
+        .word lit,unloop,commaxt
+        .word lit,branch,commabranch
+        .word here,dup,commadest,tol,exit
 
 # OTHER OPERATIONS ==============================
 
 #X WITHIN   n1|u1 n2|u2 n3|u3 -- f   n2<=n1<n3?
 #  OVER - >R - R> U< ;          per ANS document
-    head WITHIN,6,"WITHIN",docolon,LEAVE
-        .word OVER,MINUS,TOR,MINUS,RFROM,ULESS,EXIT
+    head within,6,"within",docolon,leave
+        .word over,minus,tor,minus,rfrom,uless,exit
 
 #C MOVE    addr1 addr2 u --     smart move
 #             VERSION FOR 1 ADDRESS UNIT = 1 CHAR
 #  >R 2DUP SWAP DUP R@ +     -- ... dst src src+n
 #  WITHIN IF  R> CMOVE>        src <= dst < src+n
 #       ELSE  R> CMOVE  THEN ;          otherwise
-    head MOVE,4,"MOVE",docolon,WITHIN
-        .word TOR,TWODUP,SWAP,DUP,RFETCH,PLUS
-        .word WITHIN,QBRANCH,MOVE1
-        .word RFROM,CMOVEUP,BRANCH,MOVE2
-MOVE1:  .word RFROM,CMOVE
-MOVE2:  .word EXIT
+    head move,4,"move",docolon,within
+        .word tor,twodup,swap,dup,rfetch,plus
+        .word within,qbranch,move1
+        .word rfrom,cmoveup,branch,move2
+move1:  .word rfrom,cmove
+move2:  .word exit
 
 #C DEPTH    -- +n        number of items on stack
 #   SP@ S0 SWAP - 2/ ;   16-BIT VERSION!
 #_ 32-bit version
-    head DEPTH,5,"DEPTH",docolon,MOVE
-        .word SPFETCH,S0,SWAP,MINUS,TWOSLASH,TWOSLASH,EXIT
+    head depth,5,"depth",docolon,move
+        .word spfetch,s0,swap,minus,twoslash,twoslash,exit
 
 #C ENVIRONMENT?  c-addr u -- false   system query
 #                         -- i*x true
 #_   2DROP 0 ;       the minimal definition!
-    head ENVIRONMENTQ,12,"ENVIRONMENT?",docolon,DEPTH
-        .word TWODROP,LIT,0,EXIT
+    head environmentq,12,"environment?",docolon,depth
+        .word twodrop,lit,0,exit
 
 # UTILITY WORDS AND STARTUP =====================
 
@@ -978,33 +978,33 @@ MOVE2:  .word EXIT
 #       NFA>LFA @
 #   DUP 0= UNTIL
 #   DROP ;
-    head WORDS,5,"WORDS",docolon,ENVIRONMENTQ
-        .word LATEST,FETCH
-WDS1:   .word DUP,COUNT,TYPE,SPACE,NFATOLFA,FETCH
-        .word DUP,ZEROEQUAL,QBRANCH,WDS1
-        .word DROP,EXIT
+    head words,5,"words",docolon,environmentq
+        .word latest,fetch
+wds1:   .word dup,count,type,space,nfatolfa,fetch
+        .word dup,zeroequal,qbranch,wds1
+        .word drop,exit
 
 #X .S      --           print stack contents
 #   SP@ S0 - IF
 #       SP@ S0 2 - DO I @ U. -2 +LOOP
 #   THEN ;
 #_ 32-bit version
-    head DOTS,2,".S",docolon,WORDS
-        .word SPFETCH,S0,MINUS,QBRANCH,DOTS2
-        .word SPFETCH,S0,LIT,4,MINUS,XDO
-DOTS1:  .word II,FETCH,UDOT,LIT,-4,XPLUSLOOP,DOTS1
-DOTS2:  .word EXIT
+    head dots,2,".s",docolon,words
+        .word spfetch,s0,minus,qbranch,dots2
+        .word spfetch,s0,lit,4,minus,xdo
+dots1:  .word ii,fetch,udot,lit,-4,xplusloop,dots1
+dots2:  .word exit
 
 #Z COLD     --      cold start Forth system
 #   UINIT U0 #INIT CMOVE      init user area
 #   80 COUNT INTERPRET       interpret CP/M cmd
 #   ." Z80 CamelForth etc."
 #   ABORT ;
-    head COLD,4,COLD,docolon,DOTS
-        .word UINIT,U0,NINIT,CMOVE
-        .word XSQUOTE
+    head cold,4,cold,docolon,dots
+        .word uinit,u0,ninit,cmove
+        .word xsquote
         .byte 28
-        .ascii "Type forth my friend...    "
+        .ascii "type forth my friend...    "
         .byte 0x0a
         .align
-        .word TYPE,S0,SPSTORE,QUIT       /* ABORT never returns */
+        .word type,s0,spstore,quit       /* abort never returns */

@@ -1,64 +1,64 @@
-DECIMAL
+decimal
 
-( Load resources into VRAM )
-GFX_BALL OBJ_BASE_ADR 32 CMOVE
-PAL_BALL1 OBJ_COLORS 32 CMOVE
-PAL_BALL2 OBJ_COLORS 32 + 32 CMOVE
-PAL_BALL3 OBJ_COLORS 64 + 32 CMOVE
+( load resources into vram )
+gfx_ball vram_obj 32 cmove
+pal_ball1 mem_pal_obj 32 cmove
+pal_ball2 mem_pal_obj 32 + 32 cmove
+pal_ball3 mem_pal_obj 64 + 32 cmove
 
-( Ball sprites )
-0 SPRITE FIRST_BALL
-1 SPRITE SECOND_BALL
-2 SPRITE THIRD_BALL
+( ball sprites )
+0 sprite first_ball
+1 sprite second_ball
+2 sprite third_ball
 
-( Assign palettes )
-0 FIRST_BALL SPAL!
-1 SECOND_BALL SPAL!
-2 THIRD_BALL SPAL!
+( assign palettes )
+0 first_ball spal!
+1 second_ball spal!
+2 third_ball spal!
 
-( Structure holding ball direction )
-: DIRECTION CREATE 2 CELLS ALLOT ;
-: D>DX ;
-: D>DY CELL+ ;
+( structure holding ball direction )
+: direction create 2 cells allot ;
+: d>dx ;
+: d>dy cell+ ;
 
-DIRECTION FIRST_BALL_DIR
-DIRECTION SECOND_BALL_DIR
-DIRECTION THIRD_BALL_DIR
+direction first_ball_dir
+direction second_ball_dir
+direction third_ball_dir
 
-: INIT_DIRECTION >R R@ D>DY ! R> D>DX ! ; ( dx dy pos -- )
-: INIT_POSITION >R R@ SY! R> SX! ; ( x y spr -- )
+: init_direction >r r@ d>dy ! r> d>dx ! ; ( dx dy pos -- )
+: init_position >r r@ sy! r> sx! ; ( x y spr -- )
 
-: INVERT_DX D>DX DUP @ NEGATE SWAP ! ; ( dir -- )
-: INVERT_DY D>DY DUP @ NEGATE SWAP ! ; ( dir -- )
+: invert_dx d>dx dup @ negate swap ! ; ( dir -- )
+: invert_dy d>dy dup @ negate swap ! ; ( dir -- )
 
-: TEST_NORTH SY@ 0= IF INVERT_DY ELSE DROP THEN ; ( dir spr -- )
-: TEST_SOUTH SY@ 152 = IF INVERT_DY ELSE DROP THEN ; ( dir spr -- )
-: TEST_WEST SX@ 0= IF INVERT_DX ELSE DROP THEN ; ( dir spr -- )
-: TEST_EAST SX@ 232 = IF INVERT_DX ELSE DROP THEN ; ( dir spr -- )
+: test_north sy@ 0= if invert_dy else drop then ; ( dir spr -- )
+: test_south sy@ 152 = if invert_dy else drop then ; ( dir spr -- )
+: test_west sx@ 0= if invert_dx else drop then ; ( dir spr -- )
+: test_east sx@ 232 = if invert_dx else drop then ; ( dir spr -- )
 
-: TEST_BOUNDS 2DUP TEST_NORTH 2DUP TEST_SOUTH 2DUP TEST_WEST TEST_EAST ; ( dir spr -- )
+: test_bounds 2dup test_north 2dup test_south 2dup test_west test_east ; ( dir spr -- )
 
-: MOVE_X SWAP D>DX @ OVER SX@ + SWAP SX! ; ( dir spr -- )
-: MOVE_Y SWAP D>DY @ OVER SY@ + SWAP SY! ; ( dir spr -- )
+: move_x swap d>dx @ over sx@ + swap sx! ; ( dir spr -- )
+: move_y swap d>dy @ over sy@ + swap sy! ; ( dir spr -- )
 
-: MOVE 2DUP MOVE_X MOVE_Y ; ( dir spr -- )
+: move 2dup move_x move_y ; ( dir spr -- )
 
-: DEMO
-  1 1 FIRST_BALL_DIR INIT_DIRECTION  15 15 FIRST_BALL INIT_POSITION
-  1 -1 SECOND_BALL_DIR INIT_DIRECTION  180 98 SECOND_BALL INIT_POSITION
-  -1 1 THIRD_BALL_DIR INIT_DIRECTION  230 140 THIRD_BALL INIT_POSITION
+: demo
+  1 1 first_ball_dir init_direction  15 15 first_ball init_position
+  1 -1 second_ball_dir init_direction  180 98 second_ball init_position
+  -1 1 third_ball_dir init_direction  230 140 third_ball init_position
   1024
-  ." Demo started, " DUP . ." cycles to go" CR
-  1 DO
-    I 255 AND 0= IF
-      ." ..." I .
-    THEN
-    FIRST_BALL_DIR FIRST_BALL 2DUP MOVE TEST_BOUNDS
-    SECOND_BALL_DIR SECOND_BALL 2DUP MOVE TEST_BOUNDS
-    THIRD_BALL_DIR THIRD_BALL 2DUP MOVE TEST_BOUNDS
-    VSYNC
-  LOOP
-  ." done." CR
+  ." demo started, " dup . ." cycles to go" cr
+  1 do
+    i 255 and 0= if
+      ." ..." i .
+    then
+    first_ball_dir first_ball 2dup move test_bounds
+    second_ball_dir second_ball 2dup move test_bounds
+    third_ball_dir third_ball 2dup move test_bounds
+    vsync
+  loop
+  ." done." cr
 ; ( -- )
 
-DEMO
+demo

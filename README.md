@@ -61,6 +61,10 @@ instead of cr + line feed.
 Xboo and MBv2 support has been removed. I would like to have a conversation with
 people that can still run that setup in this day and age.
 
+Converted all Forth words to lowercase. I don't like my programming language
+screaming at me, and life is too short to press the capslock button all the
+time.
+
 ## how to build/use
 
 Install devkitARM, libtonc, and make sure the binaries are in your exec

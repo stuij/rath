@@ -1,22 +1,22 @@
-HEX
+hex
 
-( Usual definitions )
-06000000 CONSTANT VRAM
-07000000 CONSTANT OAM
-VRAM 10000 + CONSTANT OBJ_BASE_ADR 
-05000200 CONSTANT OBJ_COLORS
+( usual definitions )
+06000000 constant mem_vram
+07000000 constant mem_oam
+mem_vram 10000 + constant vram_obj
+05000200 constant mem_pal_obj
 
-( Example of a CREATE .. DOES> definition )
-: SPRITE CREATE , DOES> @ 8 * OAM + ; ( n -- )
+( example of a create .. does> definition )
+: sprite create , does> @ 8 * mem_oam + ; ( n -- )
 
-( Some utility functions for sprites )
-: SY@ C@ ; ( spr -- y ) 
-: SY! C! ; ( y spr -- )
-: SX@ @ 01FF0000 AND 10 RSHIFT ; ( spr -- x )
-: SX! DUP @ FE00FFFF AND ROT 1FF AND 10 LSHIFT OR SWAP ! ; ( x spr -- )
+( some utility functions for sprites )
+: sy@ c@ ; ( spr -- y )
+: sy! c! ; ( y spr -- )
+: sx@ @ 01FF0000 and 10 rshift ; ( spr -- x )
+: sx! dup @ FE00FFFF and rot 1FF and 10 lshift or swap ! ; ( x spr -- )
 
-: SPAL@ 4 + @ 0000F000 AND C RSHIFT ; ( spr -- pal )
-: SPAL! 4 + DUP @ FFFF0FFF AND ROT F AND C LSHIFT OR SWAP ! ; ( pal spr -- )
+: spal@ 4 + @ 0000F000 and C rshift ; ( spr -- pal )
+: spal! 4 + dup @ FFFF0FFF and rot F and C lshift or swap ! ; ( pal spr -- )
 
-( Wait for Vblank interrupt )
-: VSYNC 1 1 BDOS DROP ;
+( wait for vblank interrupt )
+: vsync 1 1 bdos drop ;
