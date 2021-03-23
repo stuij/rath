@@ -12,11 +12,11 @@ mem_vram 10000 + constant vram_obj
 ( some utility functions for sprites )
 : sy@ c@ ; ( spr -- y )
 : sy! c! ; ( y spr -- )
-: sx@ @ 01FF0000 and 10 rshift ; ( spr -- x )
-: sx! dup @ FE00FFFF and rot 1FF and 10 lshift or swap ! ; ( x spr -- )
+: sx@ @ 01ff0000 and 10 rshift ; ( spr -- x )
+: sx! dup @ fe00ffff and rot 1ff and 10 lshift or swap ! ; ( x spr -- )
 
-: spal@ 4 + @ 0000F000 and C rshift ; ( spr -- pal )
-: spal! 4 + dup @ FFFF0FFF and rot F and C lshift or swap ! ; ( pal spr -- )
+: spal@ 4 + @ 0000f000 and c rshift ; ( spr -- pal )
+: spal! 4 + dup @ ffff0fff and rot f and c lshift or swap ! ; ( pal spr -- )
 
 ( wait for vblank interrupt )
 : vsync 1 1 bdos drop ;

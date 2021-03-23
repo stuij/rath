@@ -360,7 +360,7 @@ typ5:   .word exit
 #Z >digit   n -- c      convert to 0..9A..Z
 #   [ HEX ] DUP 9 > 7 AND + 30 + ;
     head todigit,6,">digit",docolon,lessnum
-        .word dup,lit,9,greater,lit,7,and,plus
+        .word dup,lit,0x9,greater,lit,0x27,and,plus
         .word lit,0x30,plus,exit
 
 #C #     ud1 -- ud2     convert 1 digit of output
@@ -539,7 +539,7 @@ liter1: .word exit
 #   DUP BASE @ U< ;
     head digitq,6,"digit?",docolon,literal
         .word dup,lit,0x39,greater,lit,0x100,and,plus
-        .word dup,lit,0x140,greater,lit,0x107,and
+        .word dup,lit,0x160,greater,lit,0x127,and
         .word minus,lit,0x30,minus
         .word dup,base,fetch,uless,exit
 
