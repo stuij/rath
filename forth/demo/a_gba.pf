@@ -3,11 +3,11 @@ hex
 ( usual definitions )
 06000000 constant mem_vram
 07000000 constant mem_oam
-mem_vram 10000 + constant vram_obj
+mem_vram 10000 + constant mem_vram_obj
 05000200 constant mem_pal_obj
 
 ( example of a create .. does> definition )
-: sprite create , does> @ 8 * mem_oam + ; ( n -- )
+: sprite create 8 * mem_oam + , does> @ ; ( n -- )
 
 ( some utility functions for sprites )
 : sy@ c@ ; ( spr -- y )

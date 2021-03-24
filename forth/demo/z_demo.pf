@@ -1,7 +1,7 @@
 decimal
 
 ( load resources into vram )
-gfx_ball vram_obj 32 cmove
+gfx_ball mem_vram_obj 32 cmove
 pal_ball1 mem_pal_obj 32 cmove
 pal_ball2 mem_pal_obj 32 + 32 cmove
 pal_ball3 mem_pal_obj 64 + 32 cmove
