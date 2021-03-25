@@ -28,8 +28,25 @@
     	mov	r1, r1, lsl #2
     	next
 
+# half operations make working with certain GBA memory types
+# much more efficient
+#Z HALF+    h-addr1 -- h-addr2   add half size
+    codeh halfplus,5,"half+",cells
+    	add	r1, r1, #2
+    	next
+
+#Z HALF-    h-addr1 -- h-addr2   sub half size
+  codeh halfminus,5,"half-",halfplus
+  sub	r1, r1, #2
+  next
+
+#Z HALVES   n1 -- n2            chars->adrs units
+      codeh halves,6,"halves",halfminus
+      mov r1, r1, lsl #1
+	next
+
 #C CHAR+    c-addr1 -- c-addr2   add char size
-    codeh charplus,5,"char+",cells
+    codeh charplus,5,"char+",halves
     	add	r1, r1, #1
     	next
 

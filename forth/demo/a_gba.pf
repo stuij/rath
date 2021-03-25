@@ -11,7 +11,7 @@ mem_vram 10000 + constant mem_vram_obj
 
 ( some utility functions for sprites )
 : sy@ c@ ; ( spr -- y )
-: sy! c! ; ( y spr -- )
+: sy! ch! ; ( y spr -- )
 : sx@ @ 01ff0000 and 10 rshift ; ( spr -- x )
 : sx! dup @ fe00ffff and rot 1ff and 10 lshift or swap ! ; ( x spr -- )
 

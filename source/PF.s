@@ -363,8 +363,22 @@ key2:   .word savekey,cfetch,lit,0,savekey,cstore
 	ldr	r1, [sp], #4	/* pop new TOS */
 	next
 
+#Z H!        half h-addr --   store half in memory
+    codeh hstore,2,"h!",store
+	ldr  r4, [sp], #4	/* read value and update sp */
+	strh r4, [r1]
+	ldr  r1, [sp], #4	/* pop new TOS */
+	next
+
 #C C!      char c-addr --    store char in memory
-    codeh cstore,2,"c!",store
+    codeh cstore,2,"c!",hstore
+	ldr	 r4, [sp], #4	/* read value and update sp */
+	strb r4, [r1]
+	ldr	 r1, [sp], #4	/* pop new TOS */
+	next
+
+#Z CH!      char cv-addr --    store char in non-byte addressable memory
+    codeh chstore,3,"ch!",cstore
 	ldr	r4, [sp], #4	/* read value and update sp */
 	and	r4, r4, #0xff
 	ands	r5, r1, #1
@@ -379,12 +393,23 @@ key2:   .word savekey,cfetch,lit,0,savekey,cstore
 	next
 
 #C @       a-addr -- x   fetch cell from memory
-    codeh fetch,1,"@",cstore
+    codeh fetch,1,"@",chstore
 	ldr	r1, [r1]
 	next
 
+#Z H@       h-addr -- x   fetch half from memory
+    codeh hfetch,2,"h@",fetch
+	ldrh r1, [r1]
+	next
+
 #C C@     c-addr -- char   fetch char from memory
-    codeh cfetch,2,"c@",fetch
+    codeh cfetch,2,"c@",hfetch
+	ldrb	r1, [r1]
+	next
+
+#Z CH@     c-addr -- char   fetch char from non-byte addressable memory
+# so OAM, palette ram, vram, gamepak flash
+    codeh chfetch,3,"ch@",cfetch
 	ands	r5, r1, #1
 	subne	r1, r1, #1	/* get halfword-aligned address */
 	ldrh	r6, [r1]	/* fetch the halfword */
@@ -396,7 +421,7 @@ key2:   .word savekey,cfetch,lit,0,savekey,cstore
 # ARITHMETIC AND LOGICAL OPERATIONS =============
 
 #C +       n1/u1 n2/u2 -- n3/u3     add n1+n2
-    codeh plus,1,"+",cfetch
+    codeh plus,1,"+",chfetch
 	ldr	r0, [sp], #4	/* read value and update sp */
 	add	r1, r0, r1	/* result in TOS */
 	next
@@ -697,6 +722,7 @@ ummend: .word drop,twodrop,lit,-1,dup,exit
 #C FILL   c-addr u char --  fill memory with char
 # eForth hi-level version...
 # needs BOUNDS ( a n -- a+n a ) ( 0xAC ) OVER + SWAP ;
+# uses chstore, so could be better
     head bounds,6,"bounds",docolon,umslashmod
 	.word over,plus,swap,exit
 
@@ -704,17 +730,37 @@ ummend: .word drop,twodrop,lit,-1,dup,exit
 	.word tor,chars,bounds
 filbeg:	.word twodup,xor
 	.word qbranch,filrep
-	.word rfetch,over,cstore,charplus
+	.word rfetch,over,chstore,charplus
 	.word branch,filbeg
 filrep:	.word rfrom,drop,twodrop
 
-#X CMOVE   c-addr1 c-addr2 u --  move from bottom
+#Z WMOVE   a-addr1 a-addr2 u --  move word steps from bottom
 # hi-level version
-    head cmove,5,"cmove",docolon,fill
+    head wmove,5,"wmove",docolon,fill
+	.word over,plus,tor	/* a-addr1 a-addr2   R: a-addr2+u */
+wmbeg:	.word dup,rfetch,xor
+	.word qbranch,wmrep
+	.word tor,dup,fetch,rfetch,store,cellplus,rfrom,cellplus
+	.word branch,wmbeg
+wmrep:	.word rfrom,drop,twodrop,exit
+
+#Z HMOVE   h-addr1 h-addr2 u --  move halfword steps from bottom
+# hi-level version
+    head hmove,5,"hmove",docolon,wmove
+	.word over,plus,tor	/* h-addr1 h-addr2   R: h-addr2+u */
+hmbeg:	.word dup,rfetch,xor
+	.word qbranch,hmrep
+	.word tor,dup,hfetch,rfetch,hstore,halfplus,rfrom,halfplus
+	.word branch,hmbeg
+hmrep:	.word rfrom,drop,twodrop,exit
+
+#X CMOVE   c-addr1 c-addr2 u --  move char steps from bottom
+# hi-level version
+    head cmove,5,"cmove",docolon,hmove
 	.word over,plus,tor	/* c-addr1 c-addr2   R: c-addr2+u */
 cmbeg:	.word dup,rfetch,xor
 	.word qbranch,cmrep
-	.word tor,dup,cfetch,rfetch,cstore,charplus,rfrom,charplus
+	.word tor,dup,cfetch,rfetch,chstore,charplus,rfrom,charplus
 	.word branch,cmbeg
 cmrep:	.word rfrom,drop,twodrop,exit
 
@@ -724,7 +770,7 @@ cmrep:	.word rfrom,drop,twodrop,exit
     	.word tor
 cmubeg:	.word rfrom,dup
 	.word qbranch,cmurep
-	.word charminus,rfrom,over,rfetch,plus,cfetch,over,rfetch,plus,cstore
+	.word charminus,rfrom,over,rfetch,plus,cfetch,over,rfetch,plus,chstore
 	.word branch,cmubeg
 cmurep:	.word drop,twodrop,exit
 
