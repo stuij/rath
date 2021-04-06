@@ -838,7 +838,12 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 .incbin "../res/pal3.pal"
 .align
 
-.set lastword, link_pal_ball3 /* last word */
+    head beany_tiles,11,"beany-tiles",docon,pal_ball3
+  .word beany_sheetTiles
+    head beany_pal,9,"beany-pal",docon,beany_tiles
+  .word beany_sheetPal
+
+.set lastword, link_beany_pal /* last word */
 enddict:
 
 # Reserve some room for Forth
