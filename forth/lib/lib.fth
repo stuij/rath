@@ -197,11 +197,81 @@ variable spr-deallocs
 : vsync 1 1 bdos drop ; ( -- )
 
 
+( keys )
+
+0001 constant a
+0002 constant b
+0004 constant select
+0008 constant start
+0010 constant right
+0020 constant left
+0040 constant up
+0080 constant down
+0100 constant r
+0200 constant l
+
+0009 constant key-accept ( A or start )
+030c constant key-reset  ( start + select + L + R )
+00f0 constant key-dir    ( lef, right, up, down )
+03ff constant key-any    ( any of them )
+
+03ff constant key-mask
+
+( adding these so I don't forget about them )
+4000 constant kcnt_irq ( enable key irq )
+0000 constant kcnt_or  ( interrupt on any of selected keys )
+8000 constant kcnt_and ( interrupt on all of selected keys )
+
+( key index, for the bit-tribool )
+4 constant ki-right
+5 constant ki-left
+6 constant ki-up
+7 constant ki-down
+
+variable key-curr
+variable key-prev
+
+: key-init 0 key-curr ! 0 key-prev ! ; ( -- )
+
+( test: key-poll key-curr @ . key-prev @ . )
+: key-poll ( -- )
+  key-curr @ key-prev !
+  reg-keyinput @ invert key-mask and key-curr ! ;
+
+: key-status key-curr @ key-prev @ . . ; ( -- )
+
+: key-hit ( key -- bool )
+  key-curr @ key-prev @ or and ;
+
+: bit-to-bool ( x bit -- bool)
+  rshift 1 and ;
+
+: bit-tribool ( minus plus x -- tri-state )
+  tuck swap bit-to-bool -rot swap bit-to-bool - ;
+
+: key-tri-horz ki-left ki-right key-curr @ bit-tribool ; ( -- +/- )
+: key-tri-vert ki-up ki-down key-curr @ bit-tribool ; ( -- +/- )
+
+
 ( testing )
 init-spr-list
+10 alloc-spr constant beany
 beany-tiles mem-vram-obj 32 move
 beany-pal mem-pal-obj 32 move
-10 alloc-spr constant beany
 0 beany spr-pal!
 95 beany spr-x! 80 beany spr-y!
+key-init
 spr-to-oam
+
+( game loop )
+: game-loop ( -- )
+  begin
+    vsync
+    key-poll
+    beany spr-x@ key-tri-horz + beany spr-x!
+    beany spr-y@ key-tri-vert + beany spr-y!
+    spr-to-oam
+    select key-hit
+  until ;
+
+game-loop
