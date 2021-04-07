@@ -65,15 +65,19 @@ Converted all Forth words to lowercase. I don't like my programming language
 screaming at me, and life is too short to press the capslock button all the
 time.
 
+Started on the library code. So far there are constants for memory locations and IO registers, we've got a shadow OAM that updates the OAM data on vblank, we've got key press detection and a mini game loop.
+
 ## how to build/use
 
 Install devkitARM, libtonc, and make sure the binaries are in your exec
 path. Also make sure the $(DEVKITARM) env variable is set to your devkitARM
 folder.
 
-Run `make` in the root of the repo.
+Run `make` in the root of the repo. This creates a binary called `PF.gba`.
 
-To make a demo binary, run `build.sh`.
+To make a demo binary, run `build.sh`, which will create a `PFdemo.gba` file.
+
+For interactive development, flash the binary on a cart, put the cart in a Game Boy Advance, and start it. `PF.gba` will put you in repl mode. `PFdemo.gba` will start a game loop with a little sprite you can control with the direction pad. To jump out of the game loop and into the repl, press select.
 
 To connect to said binary with a UART cable:
 `<this-repo-root>/shell/shell.py --gbaser /dev/ttyUSB0`
@@ -84,12 +88,14 @@ For a simple shell.py help text:
 And then type Forth code, one line at a time.
 
 To load files into the GBA from the REPL, type:
-`include <filename>`
+`include <path/to/filename>`
 
 To use Rath with Emacs (see video above), use the [forth-mode Emacs
 package](https://github.com/larsbrinkhoff/forth-mode). It looked like the
 package doesn't allow arguments to the Forth program it asks for, so I've
 wrapped the above cmdline invocation in a one-liner script.
+
+You can also run the PFdemo.gba file in an emulator, if you want to move the little sprite around. Not too exciting to all, but I think it's quite cool :D
 
 ## future
 
@@ -99,12 +105,12 @@ Github. As most projects do.
 
 But hopefully it will some day be featureful enough to be able to make some
 apps/games with. It should have some library code to handle the basics like key
-presses, background modes, sprites, music, etc (pretty much non-existent for now). The music engine will come from
+presses, background modes, sprites, music, etc (some of this is now implemented). The music engine will come from
 an existing C/Asm library like Apex Audio System or Maxmod. In addition to that,
 there are some quality of life development improvements to be done, like easy
 inclusion of assets, interactive asset testing, better IDE integration, etc.
 
 Beyond that one can think of heaps of improvements: swapping out Forth modules
 in and out of IWRAM (A lot of Forth implementations make this relatively easy),
-test framework, optimized graphics routines, 3d engine, neural engine, etc.. But
+test framework, optimized graphics routines, 3d engine, neural engine, etc.. But,..
 baby steps.
