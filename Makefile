@@ -13,6 +13,7 @@ BUILD		  :=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 
+AAS_HOME 	:= $${HOME}/code/apex-audio-system/build
 RATH_HOME := $${HOME}/code/rath
 
 #---------------------------------------------------------------------------------
@@ -42,6 +43,7 @@ LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # export PATH		:=	/c/devkitARM_r11/bin:/bin:/c/bin
 
+CONV2AAS := $(AAS_HOME)/conv2aas/conv2aas
 FCOMP := $(RATH_HOME)/tools/compiler.py
 
 #---------------------------------------------------------------------------------
@@ -49,6 +51,7 @@ FCOMP := $(RATH_HOME)/tools/compiler.py
 # as the working directory
 #---------------------------------------------------------------------------------
 TONCLIB		:= $(DEVKITARM)/../libtonc
+AAS       := $(AAS_HOME)/aas
 
 #---------------------------------------------------------------------------------
 # the prefix on the compiler executables
@@ -57,15 +60,13 @@ PREFIX			:=	arm-none-eabi-
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-ltonc # -lgba
-
+LIBS	:=	-ltonc -lAAS
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(TONCLIB) # $(LIBGBA)
-
+LIBDIRS	:= $(TONCLIB) $(AAS)
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -90,7 +91,7 @@ export LD		:=	$(CC)
 
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s))) AAS_Data.s
 PCXFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.pcx)))
 BINFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.bin)))
 
@@ -106,15 +107,19 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 .PHONY: $(BUILD) clean
 
 #---------------------------------------------------------------------------------
-$(BUILD):
+$(BUILD): music
 	@[ -d $@ ] || mkdir -p $@
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) *.elf
+	@rm -fr $(BUILD) *.elf source/AAS_Data*
 
+#---------------------------------------------------------------------------------
+music:
+	$(CONV2AAS) $(RATH_HOME)/AAS_Data
+	mv AAS_Data.* $(RATH_HOME)/source
 
 #---------------------------------------------------------------------------------
 else
@@ -124,9 +129,9 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-$(OUTPUT).gba	:	$(OUTPUT).elf
+$(OUTPUT).gba	: $(OUTPUT).elf
 
-$(OUTPUT).elf	:	$(OFILES)
+$(OUTPUT).elf	: $(OFILES)
 
 #---------------------------------------------------------------------------------
 %.gba: %.elf

@@ -1,5 +1,7 @@
 #include "tonc.h"
 
+#include "AAS.h"
+#include "AAS_Data.h"
 #include "gbfs.h"
 #include "console.h"
 #ifdef LINK_UART
@@ -34,6 +36,9 @@ u32 sourceLen;
 // Utilities
 int display(u32 val, u16 *p);
 
+void vblank_handler() {
+  AAS_DoWork();
+}
 
 int main() {
 	int i,j;
@@ -50,6 +55,15 @@ int main() {
   irq_add(II_SERIAL, handle_uart_gbaser);
 	// Enable Vblank Interrupt to allow VblankIntrWait
 	irq_add(II_VBLANK, NULL);
+  // the timer bits for the AAS engine
+	// irq_add(II_TIMER1, AAS_FastTimer1InterruptHandler);
+
+  // Initialise AAS
+	AAS_SetConfig(
+      AAS_CONFIG_MIX_32KHZ,
+      AAS_CONFIG_CHANS_8,
+      AAS_CONFIG_SPATIAL_STEREO,
+      AAS_CONFIG_DYNAMIC_OFF );
 
 	// Init Background Palette
 	pal_bg_mem[0] = RGB15(0, 0, 0);
@@ -143,7 +157,19 @@ int EWRAM_CODE service(int serv, int param) {
 		}
 	} else if (serv == 1) {
 		while(param--) VBlankIntrWait();
+    AAS_DoWork();
 		return 0;
-	}
+	} else if (serv == 2) {
+    irq_add(II_TIMER1, AAS_FastTimer1InterruptHandler);
+    AAS_MOD_Play(AAS_DATA_MOD_CreamOfTheEarth);
+    return 0;
+  } else if ( serv == 3) {
+    AAS_MOD_Stop();
+    int countdown = 10;
+    while(countdown--) {
+      VBlankIntrWait();
+      AAS_DoWork();
+    }
+  }
 	return 0;
 }
