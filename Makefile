@@ -13,6 +13,8 @@ BUILD		  :=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 
+RATH_HOME := $${HOME}/code/rath
+
 #---------------------------------------------------------------------------------
 # Link Mode : NONE, MBV2, XBOO, UART
 #---------------------------------------------------------------------------------
@@ -40,11 +42,12 @@ LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # export PATH		:=	/c/devkitARM_r11/bin:/bin:/c/bin
 
+FCOMP := $(RATH_HOME)/tools/compiler.py
+
 #---------------------------------------------------------------------------------
 # absolute path required since this makefile uses the build directory
 # as the working directory
 #---------------------------------------------------------------------------------
-#LIBGBA	:=	$${HOME}/code/rath/libgba
 TONCLIB		:= $(DEVKITARM)/../libtonc
 
 #---------------------------------------------------------------------------------
@@ -137,11 +140,13 @@ $(OUTPUT).elf	:	$(OFILES)
 	@$(LD) -specs=gba_mb.specs $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 
 #---------------------------------------------------------------------------------
-%.elf:
+%.elf: ass
 	@echo linking cartridge
 	@$(LD) $(LDFLAGS) -specs=gba.specs $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 
-
+#---------------------------------------------------------------------------------
+ass:
+	$(FCOMP) $(RATH_HOME)/forth/to-asm/d-lib-constants.fth -o ass.asm
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++

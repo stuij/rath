@@ -843,10 +843,11 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
     head beany_pal,9,"beany-pal",docon,beany_tiles
   .word beany_sheetPal
 
-.set lastword, link_beany_pal /* last word */
+.include "ass.asm"
+
 enddict:
 
 # Reserve some room for Forth
-.rept 16
+.rept 5
 .space 1024
 .endr

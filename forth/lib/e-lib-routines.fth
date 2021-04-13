@@ -1,3 +1,5 @@
+hex
+
 ( helpers - a bunch, if not all, of these should travel to assembly )
 
 : -rot rot rot ; ( a b c -- c a b )
@@ -8,6 +10,10 @@
 
 ( wait for vblank interrupt )
 : vsync 1 1 bdos drop ; ( -- )
+
+( wait for vblank interrupt )
+: start-music 1 2 bdos drop ; ( -- )
+: stop-music 1 3 bdos drop ; ( -- )
 
 ( sprite handling )
   
@@ -43,6 +49,39 @@ variable spr-deallocs
 : clear-spr dup 0 swap ! 0 swap 4 + ! ;       ( spr -- )
 : clear-oam-spr dup 0 swap ! 0 swap 2 + h! ;  ( spr -- )
 : copy-spr 6 hmove ;                          ( spr addr -- )
+
+( key handling)
+
+( key index, for the bit-tribool )
+4 constant ki-right
+5 constant ki-left
+6 constant ki-up
+7 constant ki-down
+
+variable key-curr
+variable key-prev
+
+: key-init 0 key-curr ! 0 key-prev ! ; ( -- )
+
+( test: key-poll key-curr @ . key-prev @ . )
+: key-poll ( -- )
+  key-curr @ key-prev !
+  reg-keyinput @ invert key-mask and key-curr ! ;
+
+: key-status key-curr @ key-prev @ . . ; ( -- )
+
+: key-hit ( key -- bool )
+  key-curr @ key-prev @ or and ;
+
+: bit-to-bool ( x bit -- bool)
+  rshift 1 and ;
+
+: bit-tribool ( minus plus x -- tri-state )
+  tuck swap bit-to-bool -rot swap bit-to-bool - ;
+
+: key-tri-horz ki-left ki-right key-curr @ bit-tribool ; ( -- +/- )
+: key-tri-vert ki-up ki-down key-curr @ bit-tribool ; ( -- +/- )
+
 
 ( oam shadow list algos )
 
@@ -122,59 +161,32 @@ variable spr-deallocs
   0 spr-deallocs !
 ;
 
-
-( key handling)
-
-( key index, for the bit-tribool )
-4 constant ki-right
-5 constant ki-left
-6 constant ki-up
-7 constant ki-down
-
-variable key-curr
-variable key-prev
-
-: key-init 0 key-curr ! 0 key-prev ! ; ( -- )
-
-( test: key-poll key-curr @ . key-prev @ . )
-: key-poll ( -- )
-  key-curr @ key-prev !
-  reg-keyinput @ invert key-mask and key-curr ! ;
-
-: key-status key-curr @ key-prev @ . . ; ( -- )
-
-: key-hit ( key -- bool )
-  key-curr @ key-prev @ or and ;
-
-: bit-to-bool ( x bit -- bool)
-  rshift 1 and ;
-
-: bit-tribool ( minus plus x -- tri-state )
-  tuck swap bit-to-bool -rot swap bit-to-bool - ;
-
-: key-tri-horz ki-left ki-right key-curr @ bit-tribool ; ( -- +/- )
-: key-tri-vert ki-up ki-down key-curr @ bit-tribool ; ( -- +/- )
-
-
-( testing )
-init-spr-list
-10 alloc-spr constant beany
-beany-tiles mem-vram-obj 32 move
-beany-pal mem-pal-obj 32 move
-0 beany spr-pal!
-95 beany spr-x! 80 beany spr-y!
-key-init
-spr-to-oam
+variable beany
 
 ( game loop )
 : game-loop ( -- )
+  start-music
   begin
     vsync
     key-poll
-    beany spr-x@ key-tri-horz + beany spr-x!
-    beany spr-y@ key-tri-vert + beany spr-y!
+    beany @ spr-x@ key-tri-horz + beany @ spr-x!
+    beany @ spr-y@ key-tri-vert + beany @ spr-y!
     spr-to-oam
     select key-hit
-  until ;
+  until
+  stop-music ;
 
-game-loop
+( testing )
+: init
+  init-spr-list
+  10 alloc-spr beany !
+  beany-tiles mem-vram-obj 32 move
+  beany-pal mem-pal-obj 32 move
+  0 beany @ spr-pal!
+  95 beany @ spr-x! 80 beany @ spr-y!
+  key-init
+  spr-to-oam
+  game-loop ;
+
+init
+
