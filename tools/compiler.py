@@ -18,6 +18,10 @@ class Const(Stmt):
         super().__init__(name, words)
         self.val = val
 
+class Var(Stmt):
+    def __init__(self, name, words):
+        super().__init__(name, words)
+
 class Token():
     def __init__(self, tok, line):
         self.tok = tok
@@ -52,7 +56,11 @@ def parse_comment(tokens):
         pass
 
 def parse_var(tokens, stmts, words):
-    sys.exit("variable parsing not yet implemented")
+    const = tokens.pop(0)
+    name = tokens.pop(0)
+    stmt = Var(name.tok, [const, name])
+    stmts.append(stmt)
+    words[name] = stmt
 
 def parse_const(tokens, stmts, words, stack):
     assert len(stack) > 0, "expected at least one token on the stack!!"
@@ -80,7 +88,7 @@ def parse(tokens):
             parse_comment(tokens)
         # no compile time operations allowed currently
         elif token == 'variable':
-            parse_var(tokens, stmts, words, stack)
+            parse_var(tokens, stmts, words)
         elif token == 'constant':
             parse_const(tokens, stmts, words, stack)
         else:
@@ -95,10 +103,17 @@ def parse(tokens):
 def name_to_ass(name):
     return re.sub('-', '_', name)
 
-def print_constant(file, const, prev_word):
+def const_to_ass(file, const, prev_word):
     ass_name = name_to_ass(const.name)
     out = '  head {0},{1},"{2}",docon,{3}\n    .word 0x{4}\n\n'.format(
         ass_name, len(const.name), const.name, prev_word, const.val)
+    file.write(out)
+    return ass_name
+
+def var_to_ass(file, var, prev_word):
+    ass_name = name_to_ass(var.name)
+    out = '  head {0},{1},"{2}",dovar,{3}\n    .word 0\n\n'.format(
+        ass_name, len(var.name), var.name, prev_word)
     file.write(out)
     return ass_name
 
@@ -108,7 +123,13 @@ def to_assembly(out, stmts):
     with open(out, 'w') as f:
         f.write("# compiled from Forth file\n\n")
         for stmt in stmts:
-            prev_word = print_constant(f, stmt, prev_word)
+            if isinstance(stmt, Const):
+                prev_word = const_to_ass(f, stmt, prev_word)
+            elif isinstance(stmt, Var):
+                prev_word = var_to_ass(f, stmt, prev_word)
+            else:
+                sys.exit("statement type not supported!!: {0}".format(stmt))
+              
         f.write(".set lastword, link_{0} /* last word */\n".format(prev_word))
 
 def main():
