@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import os
 import re
 import sys
 
@@ -17,40 +18,48 @@ class Const(Stmt):
         super().__init__(name, words)
         self.val = val
 
-def tokenize(file):
+class Token():
+    def __init__(self, tok, line):
+        self.tok = tok
+        self.line = line
+
+    def __repr__(self):
+        return self.print()
+
+    def __str__(self):
+        return self.print()
+
+    def print(self):
+        return "tok: {0} _ {1}".format(self.tok, self.line)
+
+def tokenize(file, tokens):
     with open(file) as fp:
-        return fp.read().split()
+        line = fp.readline()
+        count = 1
+        while line:
+            things = line.split()
+            [tokens.append(Token(x, count)) for x in things]
+            line = fp.readline()
 
 def peek(tokens):
     return tokens[0]
-
-# todo at some point
-# def chunk_tokenize(file_object, chunk_size=1024):
-#     """Lazy function (generator) to read a file line per line
-#     returning """
-#     line_nr = 0
-#     while True:
-#         line_nr += 1
-#         line = file_object.readline()
-#         if not line:
-#             break
-#         yield line, line_nr
 
 def parse_fn(tokens, stmts, words):
     sys.exit("function parsing not yet implemented")
 
 def parse_comment(tokens):
-    while tokens.pop(0) != ")":
+    while tokens.pop(0).tok != ")":
         pass
 
 def parse_var(tokens, stmts, words):
     sys.exit("variable parsing not yet implemented")
 
-def parse_const(tokens, stmts, words):
-    val = tokens.pop(0)
+def parse_const(tokens, stmts, words, stack):
+    assert len(stack) > 0, "expected at least one token on the stack!!"
+    val = stack.pop()
     const = tokens.pop(0)
     name = tokens.pop(0)
-    stmt = Const(name, [val, const, name], val)
+    stmt = Const(name.tok, [val, const, name], val.tok)
     stmts.append(stmt)
     words[name] = stmt
 
@@ -58,22 +67,28 @@ def parse(tokens):
     """Currently parse just supports fn, variable and constant definitions."""
     stmts = []
     words = {}
+    stack = []
     while tokens:
         next = peek(tokens)
+        token = next.tok
         # we're unsophistically assuming everything is in hex
-        if next == 'hex':
+        if token == 'hex':
             tokens.pop(0)
-        elif next == ':':
+        elif token == ':':
             parse_fn(tokens, stmts, words)
-        elif next == "(":
+        elif token == "(":
             parse_comment(tokens)
         # no compile time operations allowed currently
-        elif tokens[1] == 'variable':
-            parse_var(tokens, stmts, words)
-        elif tokens[1] == 'constant':
-            parse_const(tokens, stmts, words)
+        elif token == 'variable':
+            parse_var(tokens, stmts, words, stack)
+        elif token == 'constant':
+            parse_const(tokens, stmts, words, stack)
         else:
-            sys.exit("word sequence not recognized as Forth at: {0}".format(next))
+            stack.append(next)
+            tokens.pop(0)
+
+    if stack:
+        print("after parsing, there are still words on the stack!!:\n{0}".format(stack))
 
     return stmts, words
 
@@ -102,9 +117,10 @@ def main():
     parser.add_argument('-o', default="",
                         help='the output file')
     args = parser.parse_args()
-    out = args.file if args.o == "" else args.o
+    out = os.path.splitext(os.path.basename(args.file))[0] + ".s" if args.o == "" else args.o
 
-    tokens = tokenize(args.file)
+    tokens = []
+    tokenize(args.file, tokens)
     stmts, _ = parse(tokens)
     to_assembly(out, stmts)
 
