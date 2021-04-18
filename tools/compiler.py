@@ -36,6 +36,14 @@ class Token():
     def print(self):
         return "tok: {0} _ {1}".format(self.tok, self.line)
 
+class Context():
+    def __init__(self):
+        self.stmts = []
+        self.words = {}
+        self.base = 10
+        self.stack = []
+
+# tokenize
 def tokenize(file, tokens):
     with open(file) as fp:
         line = fp.readline()
@@ -48,34 +56,34 @@ def tokenize(file, tokens):
 def peek(tokens):
     return tokens[0]
 
-def parse_fn(tokens, stmts, words):
+
+# parse
+def parse_fn(tokens, context):
     sys.exit("function parsing not yet implemented")
 
 def parse_comment(tokens):
     while tokens.pop(0).tok != ")":
         pass
 
-def parse_var(tokens, stmts, words):
+def parse_var(tokens, context):
     const = tokens.pop(0)
     name = tokens.pop(0)
     stmt = Var(name.tok, [const, name])
-    stmts.append(stmt)
-    words[name] = stmt
+    context.stmts.append(stmt)
+    context.words[name] = stmt
 
-def parse_const(tokens, stmts, words, stack):
-    assert len(stack) > 0, "expected at least one token on the stack!!"
-    val = stack.pop()
+def parse_const(tokens, context):
+    assert len(context.stack) > 0, "expected at least one token on the stack!!"
+    val = context.stack.pop()
     const = tokens.pop(0)
     name = tokens.pop(0)
     stmt = Const(name.tok, [val, const, name], val.tok)
-    stmts.append(stmt)
-    words[name] = stmt
+    context.stmts.append(stmt)
+    context.words[name] = stmt
 
 def parse(tokens):
     """Currently parse just supports fn, variable and constant definitions."""
-    stmts = []
-    words = {}
-    stack = []
+    context = Context()
     while tokens:
         next = peek(tokens)
         token = next.tok
@@ -83,23 +91,25 @@ def parse(tokens):
         if token == 'hex':
             tokens.pop(0)
         elif token == ':':
-            parse_fn(tokens, stmts, words)
+            parse_fn(tokens, context)
         elif token == "(":
             parse_comment(tokens)
         # no compile time operations allowed currently
         elif token == 'variable':
-            parse_var(tokens, stmts, words)
+            parse_var(tokens, context)
         elif token == 'constant':
-            parse_const(tokens, stmts, words, stack)
+            parse_const(tokens, context)
         else:
-            stack.append(next)
+            context.stack.append(next)
             tokens.pop(0)
 
-    if stack:
-        print("after parsing, there are still words on the stack!!:\n{0}".format(stack))
+    if context.stack:
+        print("after parsing, there are still words on the stack!!:\n{0}".format(
+            context.stack))
 
-    return stmts, words
+    return context
 
+# output
 def name_to_ass(name):
     return re.sub('-', '_', name)
 
@@ -117,12 +127,12 @@ def var_to_ass(file, var, prev_word):
     file.write(out)
     return ass_name
 
-def to_assembly(out, stmts):
+def to_assembly(out, context):
     global LAST_WORD
     prev_word = LAST_WORD
     with open(out, 'w') as f:
         f.write("# compiled from Forth file\n\n")
-        for stmt in stmts:
+        for stmt in context.stmts:
             if isinstance(stmt, Const):
                 prev_word = const_to_ass(f, stmt, prev_word)
             elif isinstance(stmt, Var):
@@ -132,6 +142,7 @@ def to_assembly(out, stmts):
               
         f.write(".set lastword, link_{0} /* last word */\n".format(prev_word))
 
+# start
 def main():
     parser = argparse.ArgumentParser(description='high-level Forth word compiler')
     parser.add_argument('file', help='The file that needs to be compiled')
@@ -142,8 +153,8 @@ def main():
 
     tokens = []
     tokenize(args.file, tokens)
-    stmts, _ = parse(tokens)
-    to_assembly(out, stmts)
+    context = parse(tokens)
+    to_assembly(out, context)
 
 if __name__ == "__main__":
     main()
