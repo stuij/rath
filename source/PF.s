@@ -848,6 +848,6 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 enddict:
 
 # Reserve some room for Forth
-.rept 5
+.rept 3
 .space 1024
 .endr
