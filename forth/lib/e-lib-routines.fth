@@ -2,38 +2,10 @@ hex
 
 ( oam shadow list algos )
 
-( free-spr-addr currently just finds the sprite address one above the currently )
-( highest occupied address. this isn't very sophisticated. we should harvest )
-( free addresses in the middle of our used address range as well. we'll do this )
-( when we need to. )
-: free-spr-addr ( -- spr )
-  spr-head @ dup
-  begin ( highest-spr curr-spr )
-    child-spr@ 2dup < if nip dup then
-    dup spr-start = until
-  drop 8 + ;
-
-( z-depth in => z-depth of head -> return 0, this will cover base case )
-( z-depth => z-depth of curr, return higher-than-curr )
-: find-spr-insert        ( z-depth -- spr )
-  spr-head @             ( z-depth spr-head )
-  dup spr-z@ rot tuck <=
-  if                     ( spr-head z-depth )
-    2drop 0
-  else
-    over child-spr@
-    begin                ( higher-spr z-depth curr-spr )
-      2dup spr-z@ >= not ( higher or equal to z-depth of current sprite )
-    while                ( higher-spr z-depth curr-spr )
-      rot drop dup -rot child-spr@
-    repeat
-    2drop
-  then ;
-
 : alloc-spr ( z-depth -- spr )
   free-spr-addr dup clear-spr 2dup spr-z! swap find-spr-insert ( free-addr top-spr-addr )
   dup 0= if
-    drop ( free-addr ) ( no need to insert in top spr, set head to new addr)
+    drop ( free-addr ) ( no need to insert in top spr, set head to new addr )
     spr-head 2dup @ 2swap !
   else
     2dup child-spr@ 2swap child-spr!
@@ -61,6 +33,7 @@ hex
   then
   1 spr-deallocs +!
 ;
+
 
 : spr-to-oam ( -- )
   spr-head @ mem-oam
@@ -106,4 +79,3 @@ variable beany
   game-loop ;
 
 init
-

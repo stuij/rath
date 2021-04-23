@@ -11,6 +11,7 @@ import os
 import re
 
 LAST_WORD = "beany_pal"
+GENSYM = 0
 
 # classes
 class Stmt:
@@ -81,12 +82,27 @@ class Word(Stmt):
 
     def to_ass(self, file, prev_word):
         ass_name = name_to_ass(self.name)
-        file.write('  head {0},{1},"{2}",docolon,{3}\n    .word '.format(
+        file.write('  head {0},{1},"{2}",docolon,{3}\n'.format(
             ass_name, len(self.name), self.name, prev_word))
 
-        for word in self.words:
+        if not isinstance(self.words[0], Label):
+            file.write("    .word ")
+
+        word_size = len(self.words)
+        for i, word in enumerate(self.words):
             word.to_ass(file, prev_word)
-            file.write(',')
+            if (i < word_size - 1 and
+                not isinstance(word, Label) and
+                not isinstance(self.words[i+1], Label)):
+                file.write(',')
+            if i >= word_size - 1 and not isinstance(word, Label):
+                file.write(',')
+            if (i < word_size - 1 and
+                isinstance(word, Label) and
+                not isinstance(self.words[i+1], Label)):
+                file.write("    .word ")
+            if i >= word_size - 1 and isinstance(word, Label):
+                file.write("    .word ")
 
         file.write('exit\n\n')
 
@@ -94,6 +110,45 @@ class Word(Stmt):
 
     def print(self):
         return "const: {0} . {1} _ {2}".format(self.name, self.words, self.tokens[0].line)
+
+
+class Label(Stmt):
+    def __init__(self, name, token):
+        global GENSYM
+        label_name = name + "_" + str(GENSYM)
+        GENSYM += 1
+        super().__init__(label_name, [token])
+
+    def to_ass(self, file, prev_word):
+        ass_name = name_to_ass(self.name)
+        file.write('\n{0}:'.format(ass_name))
+
+    def print(self):
+        return "label: {0} _ {1}".format(self.name, self.tokens[0].line)
+
+
+class BranchUncond(Stmt):
+    def __init__(self, name, token):
+        super().__init__(name, [token])
+
+    def to_ass(self, file, prev_word):
+        ass_name = name_to_ass(self.name)
+        file.write('branch,{0}'.format(ass_name))
+
+    def print(self):
+        return "branch: to {0} _ {1}".format(self.name, self.tokens[0].line)
+
+
+class BranchZero(Stmt):
+    def __init__(self, name, token):
+        super().__init__(name, [token])
+
+    def to_ass(self, file, prev_word):
+        ass_name = name_to_ass(self.name)
+        file.write('qbranch,{0}'.format(ass_name))
+
+    def print(self):
+        return "qbranch: to {0} _ {1}".format(self.name, self.tokens[0].line)
 
 
 class Token:
@@ -137,6 +192,7 @@ def tokenize(file):
             things = line.split()
             [tokens.append(Token(x, count)) for x in things]
             line = fp.readline()
+            count += 1
     return tokens
 
 def peek(tokens):
@@ -149,17 +205,69 @@ def colon_compile(context):
     tokens = context.tokens
     definition = [tokens.pop(0), tokens.pop(0)]
     name = definition[1].tok
+    branch_stack = []
+    if_stack = []
 
     next = peek(tokens).tok
     while next != ";":
         try:
             words.append(parse_number(context))
+            next = peek(tokens).tok
             continue
         except ValueError:
             pass
 
         if next == "(":
             parse_comment(context)
+        elif next == "begin":
+            label = Label(name, tokens.pop(0))
+            words.append(label)
+            branch_stack.append(label)
+        elif next == "until":
+            assert branch_stack, "branch stack is empty!"
+            label = branch_stack.pop()
+            words.append(BranchZero(label.name, tokens.pop(0)))
+        elif next == "if":
+            not_if_branch = BranchZero(None, tokens.pop(0))
+            words.append(not_if_branch)
+            if_stack.append(not_if_branch)
+        elif next == "else":
+            # here we should end up with:
+            #   end of if, so unconditional branch to then
+            #   landing label of qbranch, so beginning of else
+            #   then label
+            # but be sure to remove else landing from stack before pushing if
+            assert if_stack, "if stack is empty!"
+            else_token = tokens.pop(0)
+            # remove else landing
+            else_branch = if_stack.pop()
+            # unconditional branch
+            if_branch = BranchUncond(None, else_token)
+            words.append(if_branch)
+            if_stack.append(if_branch)
+            # landing label of else
+            label = Label(name, else_token)
+            else_branch.name = label.name
+            words.append(label)
+        elif next == "then":
+            assert if_stack, "if stack is empty!"
+            label = Label(name, tokens.pop(0))
+            not_if_branch = if_stack.pop()
+            not_if_branch.name = label.name
+            words.append(label)
+        elif next == "while":
+            branch = BranchZero(None, tokens.pop(0))
+            branch_stack.append(branch)
+            words.append(branch)
+        elif next == "repeat":
+            while_branch = branch_stack.pop()
+            begin_label = branch_stack.pop()
+            repeat_token = tokens.pop(0)
+            repeat_branch = BranchUncond(begin_label.name, repeat_token)
+            repeat_label = Label(name, repeat_token)
+            while_branch.name = repeat_label.name
+            words.append(repeat_branch)
+            words.append(repeat_label)
         else:
             words.append(tokens.pop(0))
 
