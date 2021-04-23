@@ -150,6 +150,18 @@ class BranchZero(Stmt):
     def print(self):
         return "qbranch: to {0} _ {1}".format(self.name, self.tokens[0].line)
 
+class Branch(Stmt):
+    def __init__(self, name, token, branch_type):
+        super().__init__(name, [token])
+        self.branch_type = branch_type
+
+    def to_ass(self, file, prev_word):
+        ass_type = name_to_ass(self.branch_type)
+        ass_name = name_to_ass(self.name)
+        file.write('{0},{1}'.format(ass_type,ass_name))
+
+    def print(self):
+        return "{0}: to {1} _ {2}".format(self.branch_type, self.name, self.tokens[0].line)
 
 class Token:
     def __init__(self, tok, line):
@@ -268,6 +280,16 @@ def colon_compile(context):
             while_branch.name = repeat_label.name
             words.append(repeat_branch)
             words.append(repeat_label)
+        elif next == "do":
+            token = tokens.pop(0)
+            words.append(token)
+            label = Label(name, token)
+            words.append(label)
+            branch_stack.append(label)
+        elif next in ["loop", "+loop"]:
+            assert branch_stack, "branch stack is empty!"
+            label = branch_stack.pop()
+            words.append(Branch(label.name, tokens.pop(0), next))
         else:
             words.append(tokens.pop(0))
 
@@ -360,7 +382,12 @@ def parse(tokens):
 
 # output
 name_ass_table = {
-    "-": "minus"
+    "-": "minus",
+    'i': 'ii',
+    'j': 'jj',
+    'do': 'xdo',
+    'loop': 'xloop',
+    '+loop': 'xplusloop',
 
 }
 
