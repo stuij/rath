@@ -396,9 +396,9 @@ variable spr-deallocs
 : attr0@ h@ ;     ( spr -- attr0 )
 : attr1@ 2 + h@ ; ( spr -- attr1 )
 : attr2@ 4 + h@ ; ( spr -- atr2 )
-: attr0! h! ;     ( attr0 spr -- attr0 )
-: attr1! 2 + h! ; ( attr1 spr -- attr1 )
-: attr2! 4 + h! ; ( attr2 spr -- atr2 )
+: attr0! h! ;     ( attr0 spr -- )
+: attr1! 2 + h! ; ( attr1 spr -- )
+: attr2! 4 + h! ; ( attr2 spr -- )
 
 : spr-y@ c@ ;              ( spr -- y )
 : spr-y! c! ;              ( y spr -- )
@@ -553,7 +553,10 @@ variable beany
   beany-tiles mem-vram-obj 32 move
   beany-pal mem-pal-obj 32 move
   0 beany @ spr-pal!
-  95 beany @ spr-x! 80 beany @ spr-y!
+  attr0-tall 80 or beany @ attr0!
+  95 beany @ attr1!
   key-init
   spr-to-oam
   game-loop ;
+
+( attr1-size-16x32 95 or beany @ attr1! )
