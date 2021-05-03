@@ -1,8 +1,8 @@
+#include <circular_buffer.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <tonc.h>
 
-#include "circular_buffer.h"
 #include "console.h"
 
 // Console Data

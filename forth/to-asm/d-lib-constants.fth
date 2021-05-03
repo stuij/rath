@@ -387,7 +387,7 @@ f000 constant attr2-palbank-mask
 
 ( sprite handling )
 
-02001000 constant spr-start ( shadow sprite start )
+02020000 constant spr-start ( shadow sprite start )
 variable spr-head ( head of sprite linked list )
 ( if there have been more sprites dealloced than alloced this frame, )
 ( we need to erase the surplus in OAM. spr-deallocs saves the tally )

@@ -825,6 +825,8 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 # Notice also the definition of "lastword",
 # that must be defined as link_<last word label>
 
+.section .ewram,"ax",%progbits
+
     head gfx_ball,8,"gfx_ball",dovar,cold
 .incbin "../res/ball.raw"
 .align
@@ -848,6 +850,6 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 enddict:
 
 # Reserve some room for Forth
-.rept 3
+.rept 16
 .space 1024
 .endr

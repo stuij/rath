@@ -1,9 +1,8 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
+#include <circular_buffer.h>
 #include <tonc.h>
-
-#include "circular_buffer.h"
 
 // Console Data
 extern u16 console[20][30];

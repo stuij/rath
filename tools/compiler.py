@@ -388,7 +388,6 @@ name_ass_table = {
     'do': 'xdo',
     'loop': 'xloop',
     '+loop': 'xplusloop',
-
 }
 
 def try_ass_sub(name):

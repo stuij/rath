@@ -14,6 +14,7 @@ SOURCES		:=	source
 INCLUDES	:=	include
 
 AAS_HOME 	:= $${HOME}/code/apex-audio-system/build
+UART_HOME 	:= $${HOME}/code/gba-serial-adventures/build/libuart
 RATH_HOME := $${HOME}/code/rath
 
 #---------------------------------------------------------------------------------
@@ -52,6 +53,7 @@ FCOMP := $(RATH_HOME)/tools/compiler.py
 #---------------------------------------------------------------------------------
 TONCLIB		:= $(DEVKITARM)/../libtonc
 AAS       := $(AAS_HOME)/aas
+LIBUART   := $(UART_HOME)
 
 #---------------------------------------------------------------------------------
 # the prefix on the compiler executables
@@ -60,13 +62,13 @@ PREFIX			:=	arm-none-eabi-
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-ltonc -lAAS
+LIBS	:=	-ltonc -lAAS -luart
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(TONCLIB) $(AAS)
+LIBDIRS	:= $(TONCLIB) $(AAS) $(LIBUART)
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
