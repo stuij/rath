@@ -8,7 +8,7 @@
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-TARGET		:=	PF
+TARGET		:=	rath
 BUILD		  :=	build
 SOURCES		:=	source
 INCLUDES	:=	include

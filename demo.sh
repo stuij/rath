@@ -1,6 +1,6 @@
 echo Adding source files to ROM...
-padbin 0x100 PF.gba
+padbin 0x100 rath.gba
 gbfs boot.gbfs forth/lib/*
-cat PF.gba boot.gbfs > PFdemo.gba
-echo Done! [ PFdemo.gba ] created.
-# mgba-qt PFdemo.gba
+cat rath.gba boot.gbfs > rath-demo.gba
+echo Done! [ rath-demo.gba ] created.
+# mgba-qt rath-demo.gba
