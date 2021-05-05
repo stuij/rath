@@ -13,9 +13,11 @@ BUILD		  :=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 
-AAS_HOME 	:= $${HOME}/code/apex-audio-system/build
-UART_HOME 	:= $${HOME}/code/gba-serial-adventures/build/libuart
 RATH_HOME := $${HOME}/code/rath
+AAS_HOME 	:= $(RATH_HOME)/deps/apex-audio-system
+AAS_BUILD := $(AAS_HOME)/build
+UART_HOME	:= $(RATH_HOME)/deps/gba-serial-adventures
+UART_LIB	:= $(UART_HOME)/build/libuart
 
 #---------------------------------------------------------------------------------
 # Link Mode : NONE, MBV2, XBOO, UART
@@ -44,7 +46,7 @@ LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # export PATH		:=	/c/devkitARM_r11/bin:/bin:/c/bin
 
-CONV2AAS := $(AAS_HOME)/conv2aas/conv2aas
+CONV2AAS := $(AAS_BUILD)/conv2aas/conv2aas
 FCOMP := $(RATH_HOME)/tools/compiler.py
 
 #---------------------------------------------------------------------------------
@@ -52,8 +54,8 @@ FCOMP := $(RATH_HOME)/tools/compiler.py
 # as the working directory
 #---------------------------------------------------------------------------------
 TONCLIB		:= $(DEVKITARM)/../libtonc
-AAS       := $(AAS_HOME)/aas
-LIBUART   := $(UART_HOME)
+AAS       := $(AAS_BUILD)/aas
+LIBUART   := $(UART_LIB)
 
 #---------------------------------------------------------------------------------
 # the prefix on the compiler executables
@@ -111,6 +113,8 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #---------------------------------------------------------------------------------
 $(BUILD): music
 	@[ -d $@ ] || mkdir -p $@
+	@make --no-print-directory -C $(AAS_HOME)
+	@make --no-print-directory -C $(UART_HOME)
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------

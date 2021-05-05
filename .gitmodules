@@ -1,0 +1,6 @@
+[submodule "deps/apex-audio-system"]
+	path = deps/apex-audio-system
+	url = git@github.com:stuij/apex-audio-system.git
+[submodule "deps/gba-serial-adventures"]
+	path = deps/gba-serial-adventures
+	url = git@github.com:stuij/gba-serial-adventures.git
