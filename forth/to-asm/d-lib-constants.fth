@@ -11,21 +11,22 @@ hex
 08000000 constant mem-rom
 0e000000 constant mem-sram
 
-05000000 constant mem-pal-bg
-05000200 constant mem-pal-obj
-06000000 constant mem-vram-bg
-06010000 constant mem-vram-obj
+mem-pal          constant mem-pal-bg
+mem-pal 200 +    constant mem-pal-obj
+mem-vram         constant mem-vram-bg
+mem-vram 10000 + constant mem-vram-obj
 
 4000 constant cbb-size ( charblock size )
 0800 constant sbb-size ( screenblock size )
 
+mem-ewram 20000 + constant ewram-free-start
 
 ( registers )
 
 ( display )
 
 ( reg-dispcnt )
-04000000 constant reg-dispcnt  ( display control )
+mem-io constant reg-dispcnt  ( display control )
 
    0 constant dcnt-mode0  ( mode 0; bg 0-4: reg )
 0001 constant dcnt-mode1  ( mode 1; bg 0-1: reg; bg 2: affine )
@@ -58,7 +59,7 @@ e000 constant dcnt-win-mask
   13 constant dcnt-win-shift
 
 ( reg-dipstat )
-04000004 constant reg-dispstat ( display status )
+mem-io 0004 + constant reg-dispstat ( display status )
 
 0001 constant dstat-in-vbl  ( now in vblank )
 0002 constant dstat-in-hbl  ( now in hblank )
@@ -71,16 +72,16 @@ ff00 constant dstat-vct-mask
    8 constant dstat-vct-shift
 
 ( reg-vcount )
-04000006 constant reg-vcount   ( scanline count )
+mem-io 006 + constant reg-vcount   ( scanline count )
 
 
 ( backgrounds )
 
 ( bg control registers)
-04000008 constant reg-bg0cnt ( bg0 control )
-0400000a constant reg-bg1cnt ( bg1 control )
-0400000c constant reg-bg2cnt ( bg2 control )
-0400000e constant reg-bg3cnt ( bg3 control )
+mem-io 008 + constant reg-bg0cnt ( bg0 control )
+mem-io 00a + constant reg-bg1cnt ( bg1 control )
+mem-io 00c + constant reg-bg2cnt ( bg2 control )
+mem-io 00e + constant reg-bg3cnt ( bg3 control )
 
 ( reg-bgXcnt )
 0040 constant bg-mosaic      ( enable mosaic )
@@ -113,55 +114,55 @@ c000 constant bg-size-mask
   14 constant bg-size-shift
 
 ( bg scroll registers, write only )
-04000010 constant reg-bg0hofs ( bg0 horizontal scroll )
-04000012 constant reg-bg0vofs ( bg0 vertical scroll )
-04000014 constant reg-bg1hofs ( bg1 horizontal scroll )
-04000016 constant reg-bg1vofs ( bg1 vertical scroll )
-04000018 constant reg-bg2hofs ( bg2 horizontal scroll )
-0400001a constant reg-bg2vofs ( bg2 vertical scroll )
-0400001c constant reg-bg3hofs ( bg3 horizontal scroll )
-0400001e constant reg-bg3vofs ( bg3 vertical scroll )
+mem-io 010 + constant reg-bg0hofs ( bg0 horizontal scroll )
+mem-io 012 + constant reg-bg0vofs ( bg0 vertical scroll )
+mem-io 014 + constant reg-bg1hofs ( bg1 horizontal scroll )
+mem-io 016 + constant reg-bg1vofs ( bg1 vertical scroll )
+mem-io 018 + constant reg-bg2hofs ( bg2 horizontal scroll )
+mem-io 01a + constant reg-bg2vofs ( bg2 vertical scroll )
+mem-io 01c + constant reg-bg3hofs ( bg3 horizontal scroll )
+mem-io 01e + constant reg-bg3vofs ( bg3 vertical scroll )
 
 ( affine background parameters, write only! )
-04000020 constant reg-bg2pa ( bg2 matrix.pa )
-04000022 constant reg-bg2pb ( bg2 matrix.pb )
-04000024 constant reg-bg2pc ( bg2 matrix.pc )
-04000026 constant reg-bg2pd ( bg2 matrix.pd )
-04000028 constant reg-bg2x  ( bg2 x scroll )
-0400002c constant reg-bg2y  ( bg2 y scroll )
-04000030 constant reg-bg3pa ( bg3 matrix.pa )
-04000032 constant reg-bg3pb ( bg3 matrix.pb )
-04000034 constant reg-bg3pc ( bg3 matrix.pc )
-04000036 constant reg-bg3pd ( bg3 matrix.pd )
-04000038 constant reg-bg3x  ( bg3 x scroll )
-0400003c constant reg-bg3y  ( bg3 y scroll )
+mem-io 020 + constant reg-bg2pa ( bg2 matrix.pa )
+mem-io 022 + constant reg-bg2pb ( bg2 matrix.pb )
+mem-io 024 + constant reg-bg2pc ( bg2 matrix.pc )
+mem-io 026 + constant reg-bg2pd ( bg2 matrix.pd )
+mem-io 028 + constant reg-bg2x  ( bg2 x scroll )
+mem-io 02c + constant reg-bg2y  ( bg2 y scroll )
+mem-io 030 + constant reg-bg3pa ( bg3 matrix.pa )
+mem-io 032 + constant reg-bg3pb ( bg3 matrix.pb )
+mem-io 034 + constant reg-bg3pc ( bg3 matrix.pc )
+mem-io 036 + constant reg-bg3pd ( bg3 matrix.pd )
+mem-io 038 + constant reg-bg3x  ( bg3 x scroll )
+mem-io 03c + constant reg-bg3y  ( bg3 y scroll )
 
 
 ( effects )
 
 ( windowing registers )
-04000040 constant reg-win0h  ( win0 right, left, 0xllrr )
-04000042 constant reg-win1h  ( win1 right, left, 0xllrr )
-04000044 constant reg-win0v  ( win0 bottom, top, 0xttbb )
-04000046 constant reg-win1v  ( win1 bottom, top, 0xttbb )
-04000048 constant reg-winin  ( win0, win1 control )
-0400004a constant reg-winout ( winout, winobj control )
+mem-io 040 + constant reg-win0h  ( win0 right, left, 0xllrr )
+mem-io 042 + constant reg-win1h  ( win1 right, left, 0xllrr )
+mem-io 044 + constant reg-win0v  ( win0 bottom, top, 0xttbb )
+mem-io 046 + constant reg-win1v  ( win1 bottom, top, 0xttbb )
+mem-io 048 + constant reg-winin  ( win0, win1 control )
+mem-io 04a + constant reg-winout ( winout, winobj control )
 
 ( alternate windowing register names )
-04000040 constant reg-win0r ( win 0 right )
-04000041 constant reg-win0l ( win 0 left )
-04000042 constant reg-win1r ( win 1 right )
-04000043 constant reg-win1l ( win 1 left )
+mem-io 040 + constant reg-win0r ( win 0 right )
+mem-io 041 + constant reg-win0l ( win 0 left )
+mem-io 042 + constant reg-win1r ( win 1 right )
+mem-io 043 + constant reg-win1l ( win 1 left )
 
-04000044 constant reg-win0b ( win 0 bottom )
-04000045 constant reg-win0t ( win 0 top )
-04000046 constant reg-win1b ( win 1 bottom )
-04000047 constant reg-win1t ( win 1 top )
+mem-io 044 + constant reg-win0b ( win 0 bottom )
+mem-io 045 + constant reg-win0t ( win 0 top )
+mem-io 046 + constant reg-win1b ( win 1 bottom )
+mem-io 047 + constant reg-win1t ( win 1 top )
 
-04000048 constant reg-win0cnt   ( window 0 control )
-04000049 constant reg-win1cnt   ( window 1 control )
-0400004a constant reg-winoutcnt ( out window control )
-0400004b constant reg-winobjcnt ( obj window control )
+mem-io 048 + constant reg-win0cnt   ( window 0 control )
+mem-io 049 + constant reg-win1cnt   ( window 1 control )
+mem-io 04a + constant reg-winoutcnt ( out window control )
+mem-io 04b + constant reg-winobjcnt ( obj window control )
 
 ( window bit control )
 0001 constant win-bg0 ( windowed bg 0 )
@@ -176,7 +177,7 @@ c000 constant bg-size-mask
    0 constant win-layer-shift
 
 ( mosaic )
-0400004c constant reg-mosaic ( mosaic control )
+mem-io 04c + constant reg-mosaic ( mosaic control )
 
 000f constant mos-bh-mask
    0 constant mos-bh-shift
@@ -191,7 +192,7 @@ f000 constant mos-ov-mask
   12 constant mos-ov-shift
 
 ( blend control )
-04000050 constant reg-bldcnt ( blend control )
+mem-io 050 + constant reg-bldcnt ( blend control )
 
 0001 constant bld-bg0      ( blend bg 0 )
 0002 constant bld-bg1      ( blend bg 1 )
@@ -215,7 +216,7 @@ f000 constant mos-ov-mask
    8 constant bld-bot-shift
 
 ( blend weights )
-04000052 constant reg-bldalpha ( blend alpha )
+mem-io 052 + constant reg-bldalpha ( blend alpha )
 
 001f constant bld-eva-mask
    0 constant bld-eva-shift
@@ -224,23 +225,23 @@ f000 constant mos-ov-mask
    8 constant bld-evb-shift
 
 ( fade levels )
-04000054 constant reg-bldy
+mem-io 054 + constant reg-bldy
 
 001f constant bldy-mask
    0 constant bldy-shift
 
 
 ( timer registers )
-04000100 constant reg-tm ( timers as tmr-rec array )
+mem-io 100 + constant reg-tm ( timers as tmr-rec array )
 
-04000100 constant reg-tm0d   ( timer 0 data )
-04000102 constant reg-tm0cnt ( timer 0 control )
-04000104 constant reg-tm1d   ( timer 1 data )
-04000106 constant reg-tm1cnt ( timer 1 control )
-04000108 constant reg-tm2d   ( timer 2 data )
-0400010a constant reg-tm2cnt ( timer 2 control )
-0400010c constant reg-tm3d   ( timer 3 data )
-0400010e constant reg-tm3cnt ( timer 3 control )
+mem-io 100 + constant reg-tm0d   ( timer 0 data )
+mem-io 102 + constant reg-tm0cnt ( timer 0 control )
+mem-io 104 + constant reg-tm1d   ( timer 1 data )
+mem-io 106 + constant reg-tm1cnt ( timer 1 control )
+mem-io 108 + constant reg-tm2d   ( timer 2 data )
+mem-io 10a + constant reg-tm2cnt ( timer 2 control )
+mem-io 10c + constant reg-tm3d   ( timer 3 data )
+mem-io 10e + constant reg-tm3cnt ( timer 3 control )
 
    0 constant tm-freq-sys  ( system clock timer, 16.7 mhz )
    0 constant tm-freq-1    ( 1 cycle/tick, 16.7 mhz )
@@ -257,8 +258,8 @@ f000 constant mos-ov-mask
 
 ( keys )
 
-04000130 constant reg-keyinput ( key status, read only?? )
-04000132 constant reg-keycnt ( key irq control )
+mem-io 130 + constant reg-keyinput ( key status, read only?? )
+mem-io 132 + constant reg-keycnt ( key irq control )
 
 0001 constant a
 0002 constant b
@@ -286,11 +287,11 @@ f000 constant mos-ov-mask
    
 ( interrupt / system registers )
 
-04000200 constant reg-ie ( irq enable )
-04000202 constant reg-if ( irq status/acknowledge )
-04000204 constant reg-waitcnt ( waitstate control )
-04000208 constant reg-ime ( irq master enable )
-04000300 constant reg-pause ( pause system ? )
+mem-io 200 + constant reg-ie ( irq enable )
+mem-io 202 + constant reg-if ( irq status/acknowledge )
+mem-io 204 + constant reg-waitcnt ( waitstate control )
+mem-io 208 + constant reg-ime ( irq master enable )
+mem-io 300 + constant reg-pause ( pause system ? )
 
 
 ( sprites )
@@ -387,7 +388,7 @@ f000 constant attr2-palbank-mask
 
 ( sprite handling )
 
-02020000 constant spr-start ( shadow sprite start )
+ewram-free-start constant spr-start ( shadow sprite start )
 variable spr-head ( head of sprite linked list )
 ( if there have been more sprites dealloced than alloced this frame, )
 ( we need to erase the surplus in OAM. spr-deallocs saves the tally )

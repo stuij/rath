@@ -64,8 +64,8 @@ class Var(Stmt):
 
 
 class Nr(Stmt):
-    def __init__(self, name, token, val):
-        super().__init__(name, [token])
+    def __init__(self, name, tokens, val):
+        super().__init__(name, tokens)
         self.val = val
 
     def to_ass(self, file, prev_word):
@@ -312,7 +312,7 @@ def parse_var(context):
     name = tokens.pop(0)
     stmt = Var(name.tok, [const, name])
     context.stmts.append(stmt)
-    context.words[name] = stmt
+    context.words[name.tok] = stmt
 
 def parse_const(context):
     tokens = context.tokens
@@ -323,19 +323,50 @@ def parse_const(context):
     name = tokens.pop(0)
     stmt = Const(name.tok, [number, const, name], number.val)
     context.stmts.append(stmt)
-    context.words[name] = stmt
+    context.words[name.tok] = stmt
 
 def parse_number(context):
     tokens = context.tokens
     nr = int(peek(tokens).tok, context.base)
     if nr >= -0x80000000 and nr <= 0xffffffff:
         token = tokens.pop(0)
-        return Nr(token.tok, token, nr)
+        return Nr(token.tok, [token], nr)
     else:
         raise CompileError("number isn't within range!!: {0}".format(peek(tokens)))
 
+
 def parse_arith(context):
-    raise CompileError("parse_arith not yet implemented")
+    assert len(context.stack) > 1, "expected at least two token on the stack!!"
+
+    arith = context.tokens.pop(0)
+    nr2_word = context.stack.pop()
+    nr1_word = context.stack.pop()
+    nr1 = nr1_word.val
+    nr2 = nr2_word.val
+
+    result = None
+
+    if arith.tok == "+":
+        result = nr1 + nr2
+    elif arith.tok == "-":
+        result = nr1 - nr2
+    elif arith.tok == "*":
+        result = nr1 * nr2
+    elif arith.tok == "/":
+        result = nr1 / nr2
+    else:
+        raise CompileError("arithmetic operator not recognized: `{0}`".format(arith))
+
+    nr = Nr(str(result), [nr1_word, nr2_word, arith], result)
+    context.stack.append(nr)
+
+
+def parse_word(context):
+    token = context.tokens.pop(0)
+    word = context.words[token.tok]
+    assert isinstance(word, Var) or isinstance(word, Const), "word needs to be either a variable or a constant: `{0}`".format(word)
+    context.stack.append(Nr(token.tok, [token], word.val))
+
 
 def parse_token(context):
     tokens = context.tokens
@@ -363,7 +394,7 @@ def parse_token(context):
     elif token in ['+', '-', '*']:
         parse_arith(context)
     else:
-        context.stack.append(tokens.pop(0))
+        parse_word(context)
 
 
 def parse(tokens):
