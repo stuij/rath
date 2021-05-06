@@ -825,25 +825,36 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 # Notice also the definition of "lastword",
 # that must be defined as link_<last word label>
 
-.section .ewram,"ax",%progbits
+.section .rom,"x",%progbits
 
-    head gfx_ball,8,"gfx_ball",dovar,cold
+# hack: doconx a docon that is within range of the rom address space
+# to get around this we should detect when calls reference 32mb+ away code and
+# generate assembly to do veneers/long calls
+# and or find out why no veneers have been generated in the first place
+doconx:  /* -- x */
+	str	r1, [sp, #-4]!	/* push old TOS */
+	ldr	r1, [lr]	/* fetch contents of parameter field -> TOS */
+	next
+
+    head gfx_ball,8,"gfx_ball",doconx,cold
 .incbin "../res/ball.raw"
 .align
-    head pal_ball1,9,"pal_ball1",dovar,gfx_ball
+    head pal_ball1,9,"pal_ball1",doconx,gfx_ball
 .incbin "../res/pal1.pal"
 .align
-    head pal_ball2,9,"pal_ball2",dovar,pal_ball1
+    head pal_ball2,9,"pal_ball2",doconx,pal_ball1
 .incbin "../res/pal2.pal"
 .align
-    head pal_ball3,9,"pal_ball3",dovar,pal_ball2
+    head pal_ball3,9,"pal_ball3",doconx,pal_ball2
 .incbin "../res/pal3.pal"
 .align
 
-    head beany_tiles,11,"beany-tiles",docon,pal_ball3
+    head beany_tiles,11,"beany-tiles",doconx,pal_ball3
   .word beany_sheetTiles
-    head beany_pal,9,"beany-pal",docon,beany_tiles
+    head beany_pal,9,"beany-pal",doconx,beany_tiles
   .word beany_sheetPal
+
+.section .ewram,"ax",%progbits
 
 .include "ass.asm"
 
