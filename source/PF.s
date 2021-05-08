@@ -149,6 +149,7 @@ reset:
 # (internal code fragment, not a Forth word)
 # N.B.: DOCOLON must be defined before any
 # appearance of 'docolon' in a 'word' macro!
+           .type docolon, STT_FUNC
 docolon:
 enter:
 	str	ip, [fp, #-4]!	/* push old IP on ret stack */
@@ -167,6 +168,7 @@ enter:
 
 # DOVAR, code action of VARIABLE, entered by CALL
 # DOCREATE, code action of newly created words
+.type dovar, STT_FUNC
 docreate:
 dovar:  /* -- a-addr */
 	str	r1, [sp, #-4]!	/* push old TOS */
@@ -175,6 +177,7 @@ dovar:  /* -- a-addr */
 
 #C CONSTANT   n --      define a Forth constant
 #   CREATE , DOES> (machine code fragment)
+.type docon, STT_FUNC
     head constant,8,"constant",docolon,variable
 	.word create,comma,xdoes
 # DOCON, code action of CONSTANT,
@@ -817,6 +820,7 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 
 .include "../source/PFD.asm"
 .include "../source/PFH.asm"
+
 # last word from PFH.asm is COLD
 
 # Example of resource inclusion
@@ -825,33 +829,24 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 # Notice also the definition of "lastword",
 # that must be defined as link_<last word label>
 
-.section .rom,"x",%progbits
+.section .rom,"ax",%progbits
 
-# hack: doconx a docon that is within range of the rom address space
-# to get around this we should detect when calls reference 32mb+ away code and
-# generate assembly to do veneers/long calls
-# and or find out why no veneers have been generated in the first place
-doconx:  /* -- x */
-	str	r1, [sp, #-4]!	/* push old TOS */
-	ldr	r1, [lr]	/* fetch contents of parameter field -> TOS */
-	next
-
-    head gfx_ball,8,"gfx_ball",doconx,cold
+    head gfx_ball,8,"gfx_ball",docon,cold
 .incbin "../res/ball.raw"
 .align
-    head pal_ball1,9,"pal_ball1",doconx,gfx_ball
+    head pal_ball1,9,"pal_ball1",docon,gfx_ball
 .incbin "../res/pal1.pal"
 .align
-    head pal_ball2,9,"pal_ball2",doconx,pal_ball1
+    head pal_ball2,9,"pal_ball2",docon,pal_ball1
 .incbin "../res/pal2.pal"
 .align
-    head pal_ball3,9,"pal_ball3",doconx,pal_ball2
+    head pal_ball3,9,"pal_ball3",docon,pal_ball2
 .incbin "../res/pal3.pal"
 .align
 
-    head beany_tiles,11,"beany-tiles",doconx,pal_ball3
+    head beany_tiles,11,"beany-tiles",docon,pal_ball3
   .word beany_sheetTiles
-    head beany_pal,9,"beany-pal",doconx,beany_tiles
+    head beany_pal,9,"beany-pal",docon,beany_tiles
   .word beany_sheetPal
 
 .section .ewram,"ax",%progbits
