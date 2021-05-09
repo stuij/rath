@@ -95,9 +95,15 @@ export LD		:=	$(CC)
 
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s))) AAS_Data.s
+SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 PCXFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.pcx)))
 BINFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.bin)))
+
+ifneq ("$(wildcard source/AAS_Data.s)","")
+SFILES := $(SFILES)
+else
+SFILES := $(SFILES) AAS_Data.s
+endif
 
 export OFILES	:=	$(BINFILES:.bin=.o) $(PCXFILES:.pcx=.o)\
 					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
