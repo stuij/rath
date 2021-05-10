@@ -404,7 +404,7 @@ variable spr-deallocs
 : spr-y@ c@ ;              ( spr -- y )
 : spr-y! c! ;              ( y spr -- )
 : spr-x@ attr1@ 01ff and ; ( spr -- x )
-: spr-x! dup attr1@ fe00 and rot or swap attr1! ; ( x spr -- )
+: spr-x! dup attr1@ fe00 and rot 01ff and or swap attr1! ; ( x spr -- )
 
 : spr-pal@ attr2@ c rshift ; ( spr -- pal )
 : spr-pal! dup attr2@ 0fff and rot c lshift or swap ! ; ( pal spr -- )
@@ -442,7 +442,7 @@ variable key-prev
 : key-status key-curr @ key-prev @ . . ; ( -- )
 
 : key-hit ( key -- bool )
-  key-curr @ key-prev @ or and ;
+  key-curr @ key-prev @ and and ;
 
 : bit-to-bool ( x bit -- bool )
   rshift 1 and ;
