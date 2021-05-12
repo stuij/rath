@@ -77,7 +77,7 @@ mem-io 006 + constant reg-vcount   ( scanline count )
 
 ( backgrounds )
 
-( bg control registers)
+( bg control registers )
 mem-io 008 + constant reg-bg0cnt ( bg0 control )
 mem-io 00a + constant reg-bg1cnt ( bg1 control )
 mem-io 00c + constant reg-bg2cnt ( bg2 control )
@@ -85,9 +85,9 @@ mem-io 00e + constant reg-bg3cnt ( bg3 control )
 
 ( reg-bgXcnt )
 0040 constant bg-mosaic      ( enable mosaic )
-   0 constant bg-4bpp        ( 4bpp bg, no effect on affine bg)
-0080 constant bg-8bpp        ( 8bpp bg, no effect on affine bg)
-2000 constant bg-wrap        ( wrap around edges of affine bgs)
+   0 constant bg-4bpp        ( 4bpp bg, no effect on affine bg )
+0080 constant bg-8bpp        ( 8bpp bg, no effect on affine bg )
+2000 constant bg-wrap        ( wrap around edges of affine bgs )
    0 constant bg-size0
 4000 constant bg-size1
 8000 constant bg-size2
@@ -107,8 +107,12 @@ c000 constant bg-aff-128x128 ( affine bg, 128x128, 1024x1024 px )
 000c constant bg-cbb-mask
    2 constant bg-cbb-shift
 
+: bg-cbb bg-cbb-shift lshift ; ( n -- n )
+
 1f00 constant bg-sbb-mask
    8 constant bg-sbb-shift
+
+: bg-sbb bg-sbb-shift lshift ; ( n -- n )
 
 c000 constant bg-size-mask
   14 constant bg-size-shift
@@ -379,6 +383,8 @@ f000 constant attr2-palbank-mask
 : <= 2dup = -rot swap > or ; ( a b - res )
 : >= 2dup = -rot swap < or ; ( a b - res )
 
+: set-reg h! ; ( val addr -- )
+
 ( wait for vblank interrupt )
 : vsync 1 1 bdos drop ; ( -- )
 
@@ -421,7 +427,7 @@ variable spr-deallocs
 : clear-oam-spr dup 0 swap ! 0 swap 2 + h! ;  ( spr -- )
 : copy-spr 6 hmove ;                          ( spr addr -- )
 
-( key handling)
+( key handling )
 
 ( key index, for the bit-tribool )
 4 constant ki-right
@@ -549,15 +555,28 @@ variable beany
 
 ( testing )
 : init
-  init-spr-list
-  10 alloc-spr beany !
+  ( set up dispcnt and bg control regs )
+  dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or reg-dispcnt set-reg
+  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg0cnt set-reg
+
+  ( set up bg graphics )
+  apt-tiles mem-vram-bg apt-tiles-len move
+  apt-pal mem-pal-bg apt-pal-len move
+  apt-map sbb-size 1e * mem-vram + apt-map-len move
+
+  ( set up sprite )
   beany-tiles mem-vram-obj 32 move
   beany-pal mem-pal-obj 32 move
+
+  init-spr-list
+  10 alloc-spr beany !
   0 beany @ spr-pal!
   attr0-tall 80 or beany @ attr0!
   95 beany @ attr1!
-  key-init
   spr-to-oam
+
+  ( rest )
+  key-init
   game-loop ;
 
 ( attr1-size-16x32 95 or beany @ attr1! )

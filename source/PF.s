@@ -831,25 +831,47 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 
 .section .rom,"ax",%progbits
 
-    head gfx_ball,8,"gfx_ball",docon,cold
-.incbin "../res/ball.raw"
+    head gfx_ball,8,"gfx_ball",dovar,cold
+.incbin "../assets/ball.raw"
 .align
-    head pal_ball1,9,"pal_ball1",docon,gfx_ball
-.incbin "../res/pal1.pal"
+    head pal_ball1,9,"pal_ball1",dovar,gfx_ball
+.incbin "../assets/pal1.pal"
 .align
-    head pal_ball2,9,"pal_ball2",docon,pal_ball1
-.incbin "../res/pal2.pal"
+    head pal_ball2,9,"pal_ball2",dovar,pal_ball1
+.incbin "../assets/pal2.pal"
 .align
-    head pal_ball3,9,"pal_ball3",docon,pal_ball2
-.incbin "../res/pal3.pal"
+    head pal_ball3,9,"pal_ball3",dovar,pal_ball2
+.incbin "../assets/pal3.pal"
 .align
 
-    head beany_tiles,11,"beany-tiles",docon,pal_ball3
+    head apt_tiles,9,"apt-tiles",dovar,pal_ball3
+.incbin "apartment-map.img.bin"
+.align
+    head apt_tiles_len,13,"apt-tiles-len",docon,apt_tiles
+  .word 256
+
+    head apt_pal,7,"apt-pal",dovar,apt_tiles_len
+.incbin "apartment-map.pal.bin"
+.align
+    head apt_pal_len,11,"apt-pal-len",docon,apt_pal
+  .word 512
+
+    head apt_map,7,"apt-map",dovar,apt_pal_len
+.incbin "apartment-map.map.bin"
+.align
+    head apt_map_len,11,"apt-map-len",docon,apt_map
+  .word 4096
+
+    head beany_tiles,11,"beany-tiles",docon,apt_map_len
   .word beany_sheetTiles
     head beany_pal,9,"beany-pal",docon,beany_tiles
   .word beany_sheetPal
 
 .section .ewram,"ax",%progbits
+
+    head apt_toi,7,"apt-toi",docon,beany_tiles
+.incbin "apt-toi.bin"
+.align
 
 .include "ass.asm"
 

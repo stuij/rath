@@ -10,7 +10,7 @@ import argparse
 import os
 import re
 
-LAST_WORD = "beany_pal"
+LAST_WORD = "apt_toi"
 GENSYM = 0
 
 # classes
@@ -413,12 +413,13 @@ def parse(tokens):
 
 # output
 name_ass_table = {
-    "-": "minus",
-    'i': 'ii',
-    'j': 'jj',
-    'do': 'xdo',
-    'loop': 'xloop',
+    '-':     'minus',
+    'i':     'ii',
+    'j':     'jj',
+    'do':    'xdo',
+    'loop':  'xloop',
     '+loop': 'xplusloop',
+    '.s':   'dots'
 }
 
 def try_ass_sub(name):

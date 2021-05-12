@@ -14,6 +14,7 @@ SOURCES		:=	source
 INCLUDES	:=	include
 
 RATH_HOME := $${HOME}/code/rath
+ASSETS		:= $(RATH_HOME)/assets
 AAS_HOME 	:= $(RATH_HOME)/deps/apex-audio-system
 AAS_BUILD := $(AAS_HOME)/build
 UART_HOME	:= $(RATH_HOME)/deps/gba-serial-adventures
@@ -48,6 +49,7 @@ LDFLAGS	=	$(ARCH) -Wl,-Map,$(notdir $@).map
 
 CONV2AAS := $(AAS_BUILD)/conv2aas/conv2aas
 FCOMP := $(RATH_HOME)/tools/compiler.py
+TILED2BIN := $(RATH_HOME)/tools/tiled2bin.py
 
 #---------------------------------------------------------------------------------
 # absolute path required since this makefile uses the build directory
@@ -164,6 +166,9 @@ $(OUTPUT).elf	: $(OFILES)
 #---------------------------------------------------------------------------------
 ass:
 	$(FCOMP) $(RATH_HOME)/forth/to-asm/d-lib-constants.fth -o ass.asm
+	$(TILED2BIN) $(ASSETS)/apartment-map.json -o apt-toi.bin # things of interest
+	convert $(ASSETS)/apartment-map.png apartment-map.png
+	grit apartment-map.png -ftb -mR8 -mLs
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
