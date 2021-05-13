@@ -539,6 +539,8 @@ variable key-prev
 ;
 
 variable beany
+variable x
+variable y
 
 ( game loop )
 : game-loop ( -- )
@@ -546,8 +548,10 @@ variable beany
   begin
     vsync
     key-poll
-    beany @ spr-x@ key-tri-horz + beany @ spr-x!
-    beany @ spr-y@ key-tri-vert + beany @ spr-y!
+    key-tri-horz x @ + dup x h! reg-bg0hofs h!
+    key-tri-vert y @ + dup y h! reg-bg0vofs h!
+    ( beany @ spr-x@ key-tri-horz + beany @ spr-x! )
+    ( beany @ spr-y@ key-tri-vert + beany @ spr-y! )
     spr-to-oam
     select key-hit
   until
@@ -555,6 +559,9 @@ variable beany
 
 ( testing )
 : init
+  0 x h!
+  0 y h!
+
   ( set up dispcnt and bg control regs )
   dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or reg-dispcnt set-reg
   0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg0cnt set-reg
@@ -565,14 +572,14 @@ variable beany
   apt-map sbb-size 1e * mem-vram + apt-map-len move
 
   ( set up sprite )
-  beany-tiles mem-vram-obj 32 move
-  beany-pal mem-pal-obj 32 move
+  beany-tiles mem-vram-obj 40 move
+  beany-pal mem-pal-obj 40 move
 
   init-spr-list
   10 alloc-spr beany !
   0 beany @ spr-pal!
-  attr0-tall 80 or beany @ attr0!
-  95 beany @ attr1!
+  attr0-tall 50 or beany @ attr0!
+  78 beany @ attr1!
   spr-to-oam
 
   ( rest )
