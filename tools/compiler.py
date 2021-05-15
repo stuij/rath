@@ -63,6 +63,22 @@ class Var(Stmt):
         return "var: {0} _ {1}".format(self.name, self.tokens[0].line)
 
 
+class Array(Stmt):
+    def __init__(self, name, tokens, val):
+        super().__init__(name, tokens)
+        self.val = val
+
+    def to_ass(self, file, prev_word):
+        ass_name = name_to_ass(self.name)
+        out = '  head {0},{1},"{2}",dovar,{3}\n    .space {4}\n\n'.format(
+            ass_name, len(self.name), self.name, prev_word, hex(self.val))
+        file.write(out)
+        return ass_name
+
+    def print(self):
+        return "array: {0} . {1} _ {2}".format(self.name, self.val, self.tokens[0].line)
+
+
 class Nr(Stmt):
     def __init__(self, name, tokens, val):
         super().__init__(name, tokens)
@@ -306,14 +322,6 @@ def parse_comment(context):
     while context.tokens.pop(0).tok != ")":
         pass
 
-def parse_var(context):
-    tokens = context.tokens
-    const = tokens.pop(0)
-    name = tokens.pop(0)
-    stmt = Var(name.tok, [const, name])
-    context.stmts.append(stmt)
-    context.words[name.tok] = stmt
-
 def parse_const(context):
     tokens = context.tokens
     assert len(context.stack) > 0, "expected at least one token on the stack!!"
@@ -322,6 +330,25 @@ def parse_const(context):
     const = tokens.pop(0)
     name = tokens.pop(0)
     stmt = Const(name.tok, [number, const, name], number.val)
+    context.stmts.append(stmt)
+    context.words[name.tok] = stmt
+
+def parse_var(context):
+    tokens = context.tokens
+    const = tokens.pop(0)
+    name = tokens.pop(0)
+    stmt = Var(name.tok, [const, name])
+    context.stmts.append(stmt)
+    context.words[name.tok] = stmt
+
+def parse_array(context):
+    tokens = context.tokens
+    assert len(context.stack) > 0, "expected at least one token on the stack!!"
+    number = context.stack.pop()
+    assert isinstance(number, Nr), "expected number!!: {0}".format(number)
+    array = tokens.pop(0)
+    name = tokens.pop(0)
+    stmt = Array(name.tok, [number, array, name], number.val)
     context.stmts.append(stmt)
     context.words[name.tok] = stmt
 
@@ -387,10 +414,12 @@ def parse_token(context):
     elif token == "(":
         parse_comment(context)
     # no compile time operations allowed currently
-    elif token == 'variable':
-        parse_var(context)
     elif token == 'constant':
         parse_const(context)
+    elif token == 'variable':
+        parse_var(context)
+    elif token == 'array':
+        parse_array(context)
     elif token in ['+', '-', '*']:
         parse_arith(context)
     else:
