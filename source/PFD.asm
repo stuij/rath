@@ -16,7 +16,7 @@
 
 #Z CELL     -- n                 size of one cell
     head cell,4,"cell",docon,aligned
-        .word 2
+        .word 4
 
 #C CELL+    a-addr1 -- a-addr2      add cell size
     codeh cellplus,5,"cell+",cell
