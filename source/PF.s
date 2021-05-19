@@ -869,7 +869,7 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 
 .section .ewram,"ax",%progbits
 
-    head apt_toi,7,"apt-toi",docon,beany_tiles
+    head apt_toi,7,"apt-toi",dovar,beany_tiles
 .incbin "apt-toi.bin"
 .align
 
