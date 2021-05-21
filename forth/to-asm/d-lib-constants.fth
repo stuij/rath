@@ -521,7 +521,6 @@ variable key-prev
   1 spr-deallocs +!
 ;
 
-
 : spr-to-oam ( -- )
   spr-head @ mem-oam
   begin
@@ -538,40 +537,131 @@ variable key-prev
   0 spr-deallocs !
 ;
 
-variable beany
-variable x
-variable y
+
+( sprite objects )
+
+: obj-spr@ @ ; ( obj -- spr )
+: obj-spr! ! ; ( spr obj -- )
+: obj-coord cell + ; ( obj -- coord-addr )
+: obj-coord@ cell + @ ; ( obj -- coord )
+: obj-coord! cell + ! ; ( obj -- coord )
+: obj-dir@ 2 cells + h@ ; ( obj -- dir )
+: obj-dir! 2 cells + h! ; ( dir obj -- )
+: obj-actions@ a + h@ ; ( obj -- actions )
+: obj-actions! a + h! ; ( actions obj -- )
+: obj-cb-offs 3 cells + ; ( obj -- coord ) ( object collision box offset = offset x 4 )
+: obj-frame@ 7 cells + h@ ; ( obj -- frame )
+: obj-frame! 7 cells + h! ; ( frame obj -- )
+
+1e constant obj-size
+
+( a collision box offset is counted in tiles. it has both an x and a y component, )
+( both of which are a halfword long. so they too can be extracted with the x and y accessors )
+: cb-offs-ul ;           ( cb-coords -- ul ) ( return upper left collision box offset )
+: cb-offs-ur cell + ;    ( cb-coords -- ur ) ( return upper right collision box offset )
+: cb-offs-ll 2 cells + ; ( cb-coords -- ll ) ( return lower left collision box offset )
+: cb-offs-lr 3 cells + ; ( cb-coords -- lr ) ( return lower right collision box offset )
+
+obj-size array beany ( beany obj ) ( beany == player character )
+
+
+( coordinate mapping, collision detection, things of interest )
+
+variable mov-delta
+4 array bg-coord
+variable map-width
+variable map-height
+variable toi-map
+
+: x@ 2 + h@ ; ( coord-addr -- x )
+: x! 2 + h! ; ( x coord-addr -- )
+: y@ h@ ; ( coord-addr -- y )
+: y! h! ; ( y coord-addr -- )
+: store-xy tuck y! x! ; ( x y thing )
+: x-get 10 rshift ; ( coord -- x )
+: x-set ffff and swap 10 lshift or ; ( x coord -- coord )
+: y-get ffff and ; ( coord -- y )
+: y-set ffff0000 and or ; ( y coord -- coord )
+
+: coord-to-tile 3 rshift ; ( coord-xy -- tile-size )
+
+: get-x-tile-offs x-get swap x-get coord-to-tile + ; ( coord offs --  tile-x )
+: get-y-tile-offs y-get swap y-get coord-to-tile + ; ( coord offs --  tile-y )
+
+: get-offs-tile ( coord offs -- offs-tile )
+  2dup get-x-tile-offs -rot get-y-tile-offs map-width @ * + ;
+
+: get-toi toi-map @ + c@ ; ( offs-tile )
+
+( check thing of interest tiles for sprite collision-box - max 2x2 collision box tiles!! )
+: check-toi-map ( coord cb-offs-addr -- toi )
+  4 0 do 2dup i 4 * + @ get-offs-tile get-toi -rot loop
+  2drop ( toi toi toi toi ) or or or ;
+
+: new-x-delta key-tri-horz mov-delta @ * ; ( -- new-x )
+: get-nxt-x x-get new-x-delta + ; ( coord -- )
+: new-y-delta key-tri-vert mov-delta @ * ; ( -- new-y )
+: get-nxt-y y-get new-y-delta + ; ( coord -- )
+: get-nxt-coord dup get-nxt-x swap get-nxt-y x-set ; ( coord -- nxt-coord )
+
+: update-bg-x dup bg-coord x! reg-bg0hofs h! ; ( bg-x-coord -- )
+: update-bg-y dup bg-coord y! reg-bg0vofs h! ; ( bg-y-coord -- )
+: update-bg-coord dup x-get update-bg-x y-get update-bg-y ; ( coord )
+
+: spr-to-x-bg-coord  x-get swap spr-x@ - ; ( spr coord -- x-bg-coord )
+: spr-to-y-bg-coord  y-get swap spr-y@ - ; ( spr coord -- y-bg-coord )
+
+( we are here )
+: beany-to-bg-coord  ( new-coord obj -- bg-coord )
+  obj-spr@ swap 2dup spr-to-x-bg-coord -rot spr-to-y-bg-coord x-set ;
+
+: update-coord  ( obj -- ) ( currently the only thing of interest is a collision )
+  dup obj-coord@ get-nxt-coord 2dup swap obj-cb-offs check-toi-map not ( obj nxt-coord !toi )
+  if
+    2dup swap obj-coord!
+    swap beany-to-bg-coord update-bg-coord
+  else
+    2drop
+  then ;
+
 
 ( game loop )
-: game-loop ( -- )
+
+: gloop ( -- )
   start-music
   begin
     vsync
     key-poll
-    key-tri-horz x @ + dup x h! reg-bg0hofs h!
-    key-tri-vert y @ + dup y h! reg-bg0vofs h!
-    ( beany @ spr-x@ key-tri-horz + beany @ spr-x! )
-    ( beany @ spr-y@ key-tri-vert + beany @ spr-y! )
+    beany update-coord
     spr-to-oam
     select key-hit
   until
   stop-music ;
 
-( testing )
-: init
-  0 x h!
-  0 y h!
 
-  ( set up dispcnt and bg control regs )
-  dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or reg-dispcnt set-reg
-  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg0cnt set-reg
+( initialization )
 
-  ( set up bg graphics )
-  apt-tiles mem-vram-bg apt-tiles-len move
-  apt-pal mem-pal-bg apt-pal-len move
-  apt-map sbb-size 1e * mem-vram + apt-map-len move
+: set-cb-offs-8x16 ( obj-cb-offs --  ) ( todo )
+  dup cb-offs-ul 0 1 rot store-xy
+  dup cb-offs-ur 0 1 rot store-xy
+  dup cb-offs-ll 0 1 rot store-xy
+  cb-offs-lr 0 1 rot store-xy ;
 
-  ( set up sprite )
+: set-cb-offs-16x32 ( obj-cb-offs --  )
+  dup cb-offs-ul 0 2 rot store-xy
+  dup cb-offs-ur 1 2 rot store-xy
+  dup cb-offs-ll 0 3 rot store-xy
+  cb-offs-lr 1 3 rot store-xy ;
+
+: beany-init ( -- )
+  beany
+  dup obj-cb-offs
+  set-cb-offs-8x16
+
+  dup 0 swap obj-frame!
+  dup 0 swap obj-dir!
+  obj-coord 90 60 rot store-xy
+
   beany-tiles mem-vram-obj 40 move
   beany-pal mem-pal-obj 40 move
 
@@ -580,10 +670,26 @@ variable y
   0 beany @ spr-pal!
   attr0-tall 50 or beany @ attr0!
   78 beany @ attr1!
-  spr-to-oam
+  spr-to-oam ;
 
-  ( rest )
+: init-graphics ( -- )
+  ( set up dispcnt and bg control regs )
+  dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or reg-dispcnt set-reg
+  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg0cnt set-reg
+
+  ( set up bg graphics )
+  apt-tiles mem-vram-bg apt-tiles-len move
+  apt-pal mem-pal-bg apt-pal-len move
+  apt-map sbb-size 1e * mem-vram + apt-map-len move ;
+
+( init all )
+: init ( -- )
+  1 mov-delta !
+  40 map-width !
+  20 map-height !
+  apt-toi toi-map !
+
+  init-graphics
+  beany-init
   key-init
-  game-loop ;
-
-( attr1-size-16x32 95 or beany @ attr1! )
+  gloop ;

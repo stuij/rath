@@ -101,24 +101,25 @@ class Word(Stmt):
         file.write('  head {0},{1},"{2}",docolon,{3}\n'.format(
             ass_name, len(self.name), self.name, prev_word))
 
-        if not isinstance(self.words[0], Label):
+        if not self.words or not isinstance(self.words[0], Label):
             file.write("    .word ")
 
-        word_size = len(self.words)
-        for i, word in enumerate(self.words):
-            word.to_ass(file, prev_word)
-            if (i < word_size - 1 and
-                not isinstance(word, Label) and
-                not isinstance(self.words[i+1], Label)):
-                file.write(',')
-            if i >= word_size - 1 and not isinstance(word, Label):
-                file.write(',')
-            if (i < word_size - 1 and
-                isinstance(word, Label) and
-                not isinstance(self.words[i+1], Label)):
-                file.write("    .word ")
-            if i >= word_size - 1 and isinstance(word, Label):
-                file.write("    .word ")
+        if self.words:
+            word_size = len(self.words)
+            for i, word in enumerate(self.words):
+                word.to_ass(file, prev_word)
+                if (i < word_size - 1 and
+                    not isinstance(word, Label) and
+                    not isinstance(self.words[i+1], Label)):
+                    file.write(',')
+                if i >= word_size - 1 and not isinstance(word, Label):
+                    file.write(',')
+                if (i < word_size - 1 and
+                    isinstance(word, Label) and
+                    not isinstance(self.words[i+1], Label)):
+                    file.write("    .word ")
+                if i >= word_size - 1 and isinstance(word, Label):
+                    file.write("    .word ")
 
         file.write('exit\n\n')
 
