@@ -36,10 +36,6 @@ u32 sourceLen;
 /* // Utilities */
 /* int display(u32 val, u16 *p); */
 
-void vblank_handler() {
-  AAS_DoWork();
-}
-
 int main() {
 	/* int i,j; */
 	/* u16 *src, *dst; */
@@ -158,8 +154,8 @@ int EWRAM_CODE service(int serv, int param) {
 			}
 		}
 	} else if (serv == 1) {
-		while(param--) VBlankIntrWait();
     AAS_DoWork();
+		while(param--) VBlankIntrWait();
 		return 0;
 	} else if (serv == 2) {
     irq_add(II_TIMER1, AAS_FastTimer1InterruptHandler);
@@ -169,8 +165,8 @@ int EWRAM_CODE service(int serv, int param) {
     AAS_MOD_Stop();
     int countdown = 10;
     while(countdown--) {
-      VBlankIntrWait();
       AAS_DoWork();
+      VBlankIntrWait();
     }
   }
 	return 0;
