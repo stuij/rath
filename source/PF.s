@@ -844,11 +844,18 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 .incbin "../assets/pal3.pal"
 .align
 
-    head apt_tiles,9,"apt-tiles",dovar,pal_ball3
+    head snaggle_tiles,13,"snaggle-tiles",dovar,pal_ball3
+.incbin "snaggle.img.bin"
+.align
+    head snaggle_pal,11,"snaggle-pal",dovar,snaggle_tiles
+.incbin "snaggle.pal.bin"
+.align
+
+    head apt_tiles,9,"apt-tiles",dovar,snaggle_pal
 .incbin "apartment-map.img.bin"
 .align
     head apt_tiles_len,13,"apt-tiles-len",docon,apt_tiles
-  .word 256
+  .word 768
 
     head apt_pal,7,"apt-pal",dovar,apt_tiles_len
 .incbin "apartment-map.pal.bin"

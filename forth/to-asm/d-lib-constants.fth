@@ -643,33 +643,33 @@ variable toi-map
 
 : set-cb-offs-8x16 ( obj-cb-offs --  ) ( todo )
   dup cb-offs-ul 0 1 rot store-xy
-  dup cb-offs-ur 0 1 rot store-xy
-  dup cb-offs-ll 0 1 rot store-xy
-  cb-offs-lr 0 1 rot store-xy ;
+  dup cb-offs-ur 0 2 rot store-xy
+  dup cb-offs-ll 1 1 rot store-xy
+  cb-offs-lr 1 2 rot store-xy ;
 
 : set-cb-offs-16x32 ( obj-cb-offs --  )
-  dup cb-offs-ul 0 2 rot store-xy
-  dup cb-offs-ur 1 2 rot store-xy
-  dup cb-offs-ll 0 3 rot store-xy
-  cb-offs-lr 1 3 rot store-xy ;
+  dup cb-offs-ul 0 3 rot store-xy
+  dup cb-offs-ur 0 4 rot store-xy
+  dup cb-offs-ll 2 3 rot store-xy
+  cb-offs-lr 2 4 rot store-xy ;
 
 : beany-init ( -- )
   beany
   dup obj-cb-offs
-  set-cb-offs-8x16
+  set-cb-offs-16x32
 
   dup 0 swap obj-frame!
   dup 0 swap obj-dir!
   obj-coord 90 60 rot store-xy
 
-  beany-tiles mem-vram-obj 40 move
-  beany-pal mem-pal-obj 40 move
+  snaggle-tiles mem-vram-obj 100 move
+  snaggle-pal mem-pal-obj 200 move
 
   init-spr-list
   10 alloc-spr beany !
   0 beany @ spr-pal!
   attr0-tall 50 or beany @ attr0!
-  78 beany @ attr1!
+  78 attr1-size-16x32 or beany @ attr1!
   spr-to-oam ;
 
 : init-graphics ( -- )

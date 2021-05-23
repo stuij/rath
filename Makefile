@@ -169,6 +169,7 @@ ass:
 	$(TILED2BIN) $(ASSETS)/apartment-map.json -o apt-toi.bin # things of interest
 	convert $(ASSETS)/apartment-map.png apartment-map.png
 	grit apartment-map.png -ftb -mR8 -mLs
+	grit $(ASSETS)/snaggle.png -ftb -gB4 -gT 000000 -Mw 2 -Mh 4
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
