@@ -549,18 +549,13 @@ variable key-prev
 : obj-dir! 2 cells + h! ; ( dir obj -- )
 : obj-actions@ a + h@ ; ( obj -- actions )
 : obj-actions! a + h! ; ( actions obj -- )
-: obj-cb-offs 3 cells + ; ( obj -- coord ) ( object collision box offset = offset x 4 )
-: obj-frame@ 7 cells + h@ ; ( obj -- frame )
-: obj-frame! 7 cells + h! ; ( frame obj -- )
+: obj-cb-offs 3 cells + ; ( obj -- coord ) ( object collision box offset )
+: obj-cb-width 4 cells + ; ( obj -- width-addr )
+: obj-cb-height 5 cells + ; ( obj -- height-addr )
+: obj-frame@ 6 cells + h@ ; ( obj -- frame )
+: obj-frame! 6 cells + h! ; ( frame obj -- )
 
-1e constant obj-size
-
-( a collision box offset is counted in tiles. it has both an x and a y component, )
-( both of which are a halfword long. so they too can be extracted with the x and y accessors )
-: cb-offs-ul ;           ( cb-coords -- ul ) ( return upper left collision box offset )
-: cb-offs-ur cell + ;    ( cb-coords -- ur ) ( return upper right collision box offset )
-: cb-offs-ll 2 cells + ; ( cb-coords -- ll ) ( return lower left collision box offset )
-: cb-offs-lr 3 cells + ; ( cb-coords -- lr ) ( return lower right collision box offset )
+1a constant obj-size
 
 obj-size array beany ( beany obj ) ( beany == player character )
 
@@ -591,12 +586,35 @@ variable toi-map
 : get-offs-tile ( coord offs -- offs-tile )
   2dup get-x-tile-offs -rot get-y-tile-offs map-width @ * + ;
 
-: get-toi toi-map @ + c@ ; ( offs-tile )
+: get-toi toi-map @ + c@ ; ( offs-tile -- toi )
 
-( check thing of interest tiles for sprite collision-box - max 2x2 collision box tiles!! )
-: check-toi-map ( coord cb-offs-addr -- toi )
-  4 0 do 2dup i 4 * + @ get-offs-tile get-toi -rot loop
-  2drop ( toi toi toi toi ) or or or ;
+( this fn uses width and height of a bounding box to check all the squares of )
+( that box for points of interest, and will push them on the stack )
+: check-toi-loop ( coord obj-cb-offs width height -- toi's.. )
+  0 do ( 900060 3 2 )
+    ( this is some truely horrible stack manipulation to make sure that we keep on )
+    ( feeding the inner loop bounds, 2 in example, while pushing the result of get-toi )
+    ( back on the stack. stack manipulation past 3 items becomes a serious chore )
+    ( another option might be or-ing the values inline, but this )
+    ( brings its own issues with having to know if this is the first value being pushed )
+    ( or not. perhaps pass arguments in a struct, to circumvent stack manipulation, )
+    ( but seeing traditional Forth doesn't do local variables, this isn't pretty either. )
+    ( I'm guessing we'd need a global struct just for this fn. )
+    dup 2swap rot ( 2 900060 3 2 )
+    0 do ( 2 900060 3 )
+      2dup dup x-get i + swap y-get j + x-set get-offs-tile get-toi
+      ( 2 900060 3 3d2 ) 2swap swap >r ( 3 3d2 900060 ) rot ( 3d2 900060 3 ) r> -rot
+    loop
+    rot
+    loop
+  2drop drop ;
+
+( check thing of interest tiles for sprite collision-box )
+: check-toi-map ( coord obj-cb-offs width height -- toi )
+  2dup * >r
+  check-toi-loop
+  ( w x h of toi's are now on the stack )
+  r> 1 do or loop ;
 
 : new-x-delta key-tri-horz mov-delta @ * ; ( -- new-x )
 : get-nxt-x x-get new-x-delta + ; ( coord -- )
@@ -616,7 +634,8 @@ variable toi-map
   obj-spr@ swap 2dup spr-to-x-bg-coord -rot spr-to-y-bg-coord x-set ;
 
 : update-coord  ( obj -- ) ( currently the only thing of interest is a collision )
-  dup obj-coord@ get-nxt-coord 2dup swap obj-cb-offs check-toi-map not ( obj nxt-coord !toi )
+  dup obj-coord@ get-nxt-coord 2dup swap ( obj nxt-coord nxt-coord obj )
+  dup obj-cb-offs @ over obj-cb-width @ 1 + rot obj-cb-height @ check-toi-map not ( obj nxt-coord !toi )
   if
     2dup swap obj-coord!
     swap beany-to-bg-coord update-bg-coord
@@ -641,22 +660,19 @@ variable toi-map
 
 ( initialization )
 
-: set-cb-offs-8x16 ( obj-cb-offs --  ) ( todo )
-  dup cb-offs-ul 0 1 rot store-xy
-  dup cb-offs-ur 0 2 rot store-xy
-  dup cb-offs-ll 1 1 rot store-xy
-  cb-offs-lr 1 2 rot store-xy ;
+: set-spr-cb-8x16 ( obj --  )
+  dup obj-cb-offs 0 1 rot store-xy
+  dup obj-cb-width 1 swap !
+  obj-cb-height 1 swap ! ;
 
-: set-cb-offs-16x32 ( obj-cb-offs --  )
-  dup cb-offs-ul 0 3 rot store-xy
-  dup cb-offs-ur 0 4 rot store-xy
-  dup cb-offs-ll 2 3 rot store-xy
-  cb-offs-lr 2 4 rot store-xy ;
+: set-spr-cb-16x32 ( obj-cb-offs --  )
+  dup obj-cb-offs 0 3 rot store-xy
+  dup obj-cb-width 2 swap !
+  obj-cb-height 2 swap ! ;
 
 : beany-init ( -- )
   beany
-  dup obj-cb-offs
-  set-cb-offs-16x32
+  dup set-spr-cb-16x32
 
   dup 0 swap obj-frame!
   dup 0 swap obj-dir!

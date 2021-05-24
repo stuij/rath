@@ -449,7 +449,9 @@ name_ass_table = {
     'do':    'xdo',
     'loop':  'xloop',
     '+loop': 'xplusloop',
-    '.s':   'dots'
+    '.s':   'dots',
+    '>r': 'tor',
+    'r>': 'rfrom',
 }
 
 def try_ass_sub(name):
