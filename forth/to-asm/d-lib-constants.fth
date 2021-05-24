@@ -438,7 +438,9 @@ variable spr-deallocs
 variable key-curr
 variable key-prev
 
-: key-init 0 key-curr ! 0 key-prev ! ; ( -- )
+: key-init ( -- )
+  0 key-curr !
+  0 key-prev ! ;
 
 ( test: key-poll key-curr @ . key-prev @ . )
 : key-poll ( -- )
@@ -555,9 +557,17 @@ variable key-prev
 : obj-frame@ 6 cells + h@ ; ( obj -- frame )
 : obj-frame! 6 cells + h! ; ( frame obj -- )
 
-1a constant obj-size
+: set-spr-cb-8x16 ( obj --  )
+  dup obj-cb-offs 0 1 rot store-xy
+  dup obj-cb-width 1 swap !
+  obj-cb-height 1 swap ! ;
 
-obj-size array beany ( beany obj ) ( beany == player character )
+: set-spr-cb-16x32 ( obj-cb-offs --  )
+  dup obj-cb-offs 0 3 rot store-xy
+  dup obj-cb-width 2 swap !
+  obj-cb-height 2 swap ! ;
+
+1a constant obj-size
 
 
 ( coordinate mapping, collision detection, things of interest )
@@ -613,7 +623,7 @@ variable toi-map
 : check-toi-map ( coord obj-cb-offs width height -- toi )
   2dup * >r
   check-toi-loop
-  ( w x h of toi's are now on the stack )
+  ( w x h of toi's are now on the stack, compress them to one )
   r> 1 do or loop ;
 
 : new-x-delta key-tri-horz mov-delta @ * ; ( -- new-x )
@@ -622,9 +632,13 @@ variable toi-map
 : get-nxt-y y-get new-y-delta + ; ( coord -- )
 : get-nxt-coord dup get-nxt-x swap get-nxt-y x-set ; ( coord -- nxt-coord )
 
-: update-bg-x dup bg-coord x! reg-bg0hofs h! ; ( bg-x-coord -- )
-: update-bg-y dup bg-coord y! reg-bg0vofs h! ; ( bg-y-coord -- )
-: update-bg-coord dup x-get update-bg-x y-get update-bg-y ; ( coord )
+: update-shadow-bg-x dup bg-coord x! reg-bg0hofs h! ; ( bg-x-coord -- )
+: update-shadow-bg-y dup bg-coord y! reg-bg0vofs h! ; ( bg-y-coord -- )
+: update-shadow-bg-coord dup x-get update-shadow-bg-x y-get update-shadow-bg-y ; ( coord )
+
+: update-bg-x bg-coord x@ reg-bg0hofs h! ; ( -- )
+: update-bg-y bg-coord y@ reg-bg0vofs h! ; ( -- )
+: update-bg-coord update-bg-x update-bg-y ; ( -- )
 
 : spr-to-x-bg-coord  x-get swap spr-x@ - ; ( spr coord -- x-bg-coord )
 : spr-to-y-bg-coord  y-get swap spr-y@ - ; ( spr coord -- y-bg-coord )
@@ -638,21 +652,38 @@ variable toi-map
   dup obj-cb-offs @ over obj-cb-width @ 1 + rot obj-cb-height @ check-toi-map not ( obj nxt-coord !toi )
   if
     2dup swap obj-coord!
-    swap beany-to-bg-coord update-bg-coord
+    swap beany-to-bg-coord update-shadow-bg-coord
   else
     2drop
   then ;
 
 
+( beany == player character sprite )
+obj-size array beany
+
+
 ( game loop )
+
+( updates that need to happen within hard boundry of vblank, aka graphics updates )
+: update-vblank-hard ( -- )
+  update-bg-coord
+  spr-to-oam ;
+
+( update things that are less time-sensitive )
+: update-loose ( -- )
+    beany update-coord ;
+
+: update-world
+    update-vblank-hard
+    update-loose ;  
 
 : gloop ( -- )
   start-music
   begin
-    vsync
     key-poll
-    beany update-coord
-    spr-to-oam
+    update-world
+    ( music buffer stuffing happens in C before vsync irq call )
+    vsync
     select key-hit
   until
   stop-music ;
@@ -660,20 +691,11 @@ variable toi-map
 
 ( initialization )
 
-: set-spr-cb-8x16 ( obj --  )
-  dup obj-cb-offs 0 1 rot store-xy
-  dup obj-cb-width 1 swap !
-  obj-cb-height 1 swap ! ;
-
-: set-spr-cb-16x32 ( obj-cb-offs --  )
-  dup obj-cb-offs 0 3 rot store-xy
-  dup obj-cb-width 2 swap !
-  obj-cb-height 2 swap ! ;
-
 : beany-init ( -- )
+  1 mov-delta !
+  
   beany
   dup set-spr-cb-16x32
-
   dup 0 swap obj-frame!
   dup 0 swap obj-dir!
   obj-coord 90 60 rot store-xy
@@ -685,13 +707,17 @@ variable toi-map
   10 alloc-spr beany !
   0 beany @ spr-pal!
   attr0-tall 50 or beany @ attr0!
-  78 attr1-size-16x32 or beany @ attr1!
-  spr-to-oam ;
+  78 attr1-size-16x32 or beany @ attr1! ;
 
-: init-graphics ( -- )
-  ( set up dispcnt and bg control regs )
+: apt-graphics-mode-init ( -- )
+  ( set up dispcnt and bg control regs for apartment scene )
   dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or reg-dispcnt set-reg
-  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg0cnt set-reg
+  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg0cnt set-reg ;
+
+: apt-bg-init ( -- )
+  40 map-width !
+  20 map-height !
+  apt-toi toi-map !
 
   ( set up bg graphics )
   apt-tiles mem-vram-bg apt-tiles-len move
@@ -700,12 +726,9 @@ variable toi-map
 
 ( init all )
 : init ( -- )
-  1 mov-delta !
-  40 map-width !
-  20 map-height !
-  apt-toi toi-map !
-
-  init-graphics
-  beany-init
   key-init
+  beany-init
+  apt-bg-init
+  update-world
+  apt-graphics-mode-init
   gloop ;
