@@ -578,6 +578,12 @@ variable map-width
 variable map-height
 variable toi-map
 
+variable bg-x-max-clamp-mod
+variable bg-y-max-clamp-mod
+
+variable beany-equ-offs-x ( player sprite equilibrium x position )
+variable beany-equ-offs-y ( player sprite equilibrium y position )
+
 : x@ 2 + h@ ; ( coord-addr -- x )
 : x! 2 + h! ; ( x coord-addr -- )
 : y@ h@ ; ( coord-addr -- y )
@@ -632,27 +638,55 @@ variable toi-map
 : get-nxt-y y-get new-y-delta + ; ( coord -- )
 : get-nxt-coord dup get-nxt-x swap get-nxt-y x-set ; ( coord -- nxt-coord )
 
-: update-shadow-bg-x dup bg-coord x! reg-bg0hofs h! ; ( bg-x-coord -- )
-: update-shadow-bg-y dup bg-coord y! reg-bg0vofs h! ; ( bg-y-coord -- )
+: update-shadow-bg-x bg-coord x! ; ( bg-x-coord -- )
+: update-shadow-bg-y bg-coord y! ; ( bg-y-coord -- )
 : update-shadow-bg-coord dup x-get update-shadow-bg-x y-get update-shadow-bg-y ; ( coord )
 
 : update-bg-x bg-coord x@ reg-bg0hofs h! ; ( -- )
 : update-bg-y bg-coord y@ reg-bg0vofs h! ; ( -- )
 : update-bg-coord update-bg-x update-bg-y ; ( -- )
 
-: spr-to-x-bg-coord  x-get swap spr-x@ - ; ( spr coord -- x-bg-coord )
-: spr-to-y-bg-coord  y-get swap spr-y@ - ; ( spr coord -- y-bg-coord )
+: clamp-bg-min dup 0 < if drop 0 then ; ( x-or-y-bg-coord )
 
-( we are here )
-: beany-to-bg-coord  ( new-coord obj -- bg-coord )
-  obj-spr@ swap 2dup spr-to-x-bg-coord -rot spr-to-y-bg-coord x-set ;
+: clamp-bg-x-max ( x-bg-coord )
+  dup map-width @ 8 * f0 - bg-x-max-clamp-mod @ - tuck >
+  if nip else drop then ;
 
-: update-coord  ( obj -- ) ( currently the only thing of interest is a collision )
+: clamp-bg-y-max ( y-bg-coord )
+  dup map-height @ 8 * a0 - bg-y-max-clamp-mod @ - tuck >
+  if nip else drop then ;
+
+: spr-to-x-bg-coord ( coord -- x-bg-coord )
+  x-get beany-equ-offs-x @ - clamp-bg-min clamp-bg-x-max ;
+
+: spr-to-y-bg-coord ( coord -- y-bg-coord )
+  y-get beany-equ-offs-y @ - clamp-bg-min clamp-bg-y-max ;
+
+: beany-to-bg-coord ( new-coord -- bg-coord )
+  dup spr-to-x-bg-coord swap spr-to-y-bg-coord x-set ;
+
+: update-x-spr-coord ( obj -- )
+  dup obj-coord@ x-get
+  bg-coord @ x-get ( obj x-obj-coord x-bg-coord ) -
+  swap obj-spr@ spr-x! ;
+
+: update-y-spr-coord ( obj -- )
+  dup obj-coord@ y-get
+  bg-coord @ y-get ( obj y-obj-coord y-bg-coord ) -
+  swap obj-spr@ spr-y! ;
+
+: update-spr-coord ( obj -- )
+  dup update-x-spr-coord update-y-spr-coord ;
+
+: update-coord ( obj -- ) ( currently the only thing of interest is a collision )
   dup obj-coord@ get-nxt-coord 2dup swap ( obj nxt-coord nxt-coord obj )
   dup obj-cb-offs @ over obj-cb-width @ 1 + rot obj-cb-height @ check-toi-map not ( obj nxt-coord !toi )
   if
-    2dup swap obj-coord!
-    swap beany-to-bg-coord update-shadow-bg-coord
+    2dup ( obj nxt-coord obj nxt-coord )
+    swap ( obj nxt-coord nxt-coord obj )
+    obj-coord! ( obj nxt-coord )
+    beany-to-bg-coord update-shadow-bg-coord
+    update-spr-coord
   else
     2drop
   then ;
@@ -675,7 +709,7 @@ obj-size array beany
 
 : update-world
     update-vblank-hard
-    update-loose ;  
+    update-loose ;
 
 : gloop ( -- )
   start-music
@@ -693,7 +727,9 @@ obj-size array beany
 
 : beany-init ( -- )
   1 mov-delta !
-  
+  78 beany-equ-offs-x !
+  40 beany-equ-offs-y !
+
   beany
   dup set-spr-cb-16x32
   dup 0 swap obj-frame!
@@ -706,8 +742,8 @@ obj-size array beany
   init-spr-list
   10 alloc-spr beany !
   0 beany @ spr-pal!
-  attr0-tall 50 or beany @ attr0!
-  78 attr1-size-16x32 or beany @ attr1! ;
+  attr0-tall beany-equ-offs-y @ or beany @ attr0!
+  beany-equ-offs-x @ attr1-size-16x32 or beany @ attr1! ;
 
 : apt-graphics-mode-init ( -- )
   ( set up dispcnt and bg control regs for apartment scene )
@@ -718,6 +754,9 @@ obj-size array beany
   40 map-width !
   20 map-height !
   apt-toi toi-map !
+
+  0  bg-x-max-clamp-mod !
+  1d bg-y-max-clamp-mod !
 
   ( set up bg graphics )
   apt-tiles mem-vram-bg apt-tiles-len move
