@@ -449,8 +449,31 @@ variable key-prev
 
 : key-status key-curr @ key-prev @ . . ; ( -- )
 
-: key-hit ( key -- bool )
+: key-is-down ( keys -- bool )
+  key-curr @ and ;
+
+: key-is-up ( keys -- bool )
+  key-curr @ invert and ;
+
+: key-was-down ( keys -- bool )
+  key-prev @ and ;
+
+: key-was-up ( keys -- bool )
+  key-prev @ invert and ;
+
+
+: key-transit ( keys -- transit-keys )
+  key-curr @ key-prev @ or and ;
+
+: key-held ( keys -- bool )
   key-curr @ key-prev @ and and ;
+
+: key-released ( keys -- bool )
+  key-curr @ invert key-prev @ and and ;
+
+: key-hit ( keys -- bool )
+  key-curr @ key-prev @ invert and and ;
+
 
 : bit-to-bool ( x bit -- bool )
   rshift 1 and ;
@@ -459,7 +482,11 @@ variable key-prev
   tuck swap bit-to-bool -rot swap bit-to-bool - ;
 
 : key-tri-horz ki-left ki-right key-curr @ bit-tribool ; ( -- +/- )
+: key-tri-horz-prev ki-left ki-right key-prev @ bit-tribool ; ( -- +/- )
+
 : key-tri-vert ki-up ki-down key-curr @ bit-tribool ; ( -- +/- )
+: key-tri-vert-prev ki-up ki-down key-prev @ bit-tribool ; ( -- +/- )
+
 
 ( oam shadow list algos )
 
@@ -572,15 +599,17 @@ variable key-prev
 
 ( coordinate mapping, collision detection, things of interest )
 
-variable mov-delta
-4 array bg-coord
+( variables and helpers )
+
 variable map-width
 variable map-height
 variable toi-map
 
+4 array bg-coord
 variable bg-x-max-clamp-mod
 variable bg-y-max-clamp-mod
 
+variable mov-delta
 variable beany-equ-offs-x ( player sprite equilibrium x position )
 variable beany-equ-offs-y ( player sprite equilibrium y position )
 
@@ -601,6 +630,14 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 
 : get-offs-tile ( coord offs -- offs-tile )
   2dup get-x-tile-offs -rot get-y-tile-offs map-width @ * + ;
+
+: new-x-delta key-tri-horz mov-delta @ * ; ( -- new-x )
+: get-nxt-x x-get new-x-delta + ; ( coord -- )
+: new-y-delta key-tri-vert mov-delta @ * ; ( -- new-y )
+: get-nxt-y y-get new-y-delta + ; ( coord -- )
+: get-nxt-coord dup get-nxt-x swap get-nxt-y x-set ; ( coord -- nxt-coord )
+
+( things of interest )
 
 : get-toi toi-map @ + c@ ; ( offs-tile -- toi )
 
@@ -632,11 +669,7 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
   ( w x h of toi's are now on the stack, compress them to one )
   r> 1 do or loop ;
 
-: new-x-delta key-tri-horz mov-delta @ * ; ( -- new-x )
-: get-nxt-x x-get new-x-delta + ; ( coord -- )
-: new-y-delta key-tri-vert mov-delta @ * ; ( -- new-y )
-: get-nxt-y y-get new-y-delta + ; ( coord -- )
-: get-nxt-coord dup get-nxt-x swap get-nxt-y x-set ; ( coord -- nxt-coord )
+( bg coordinates )
 
 : update-shadow-bg-x bg-coord x! ; ( bg-x-coord -- )
 : update-shadow-bg-y bg-coord y! ; ( bg-y-coord -- )
@@ -691,7 +724,29 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
     2drop
   then ;
 
+( animation )
 
+( standing left right up down )
+
+: update-dir ( obj -- )
+  key-dir key-transit if ( only update if there are actually any key-press changes )
+    dup obj-dir@
+    ( if we point to same direction as before we don't change direction, )
+    ( so we face the same side when transitioning to/from diagonals. )
+    ( we only support 4 directions for now )
+    key-is-down if
+      ( else point to direction in preset order of preference )
+      key-left  key-is-up if key-left  swap obj-dir! else
+      key-right key-is-up if key-right swap obj-dir! else
+      key-up    key-is-up if key-up    swap obj-dir! else
+      key-down  key-is-up if key-down  swap obj-dir! else
+      then then then then
+    then
+  then ;
+
+: update-anim ( obj -- )
+  update-dir ;
+  
 ( beany == player character sprite )
 obj-size array beany
 
@@ -705,7 +760,8 @@ obj-size array beany
 
 ( update things that are less time-sensitive )
 : update-loose ( -- )
-    beany update-coord ;
+  beany dup update-coord
+  update-anim ;
 
 : update-world
     update-vblank-hard
@@ -771,3 +827,6 @@ obj-size array beany
   update-world
   apt-graphics-mode-init
   gloop ;
+
+( implement this at some point: commercial rom WAITCNT settings )
+( REG_WAITCNT = 0x4317 )
