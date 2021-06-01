@@ -729,20 +729,20 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 ( standing left right up down )
 
 : update-dir ( obj -- )
-  key-dir key-transit if ( only update if there are actually any key-press changes )
-    dup obj-dir@
+  key-dir key-transit if ( only update if there are actually any key-press changes 
     ( if we point to same direction as before we don't change direction, )
     ( so we face the same side when transitioning to/from diagonals. )
     ( we only support 4 directions for now )
-    key-is-down if
+    dup obj-dir@ key-is-down if drop
+    else
       ( else point to direction in preset order of preference )
-      key-left  key-is-up if key-left  swap obj-dir! else
-      key-right key-is-up if key-right swap obj-dir! else
-      key-up    key-is-up if key-up    swap obj-dir! else
-      key-down  key-is-up if key-down  swap obj-dir! else
+      left  key-is-down if left  swap obj-dir! else
+      right key-is-down if right swap obj-dir! else
+      up    key-is-down if up    swap obj-dir! else
+      down  key-is-down if down  swap obj-dir! else
       then then then then
     then
-  then ;
+  else drop then ;
 
 : update-anim ( obj -- )
   update-dir ;
