@@ -159,7 +159,7 @@ int EWRAM_CODE service(int serv, int param) {
 		return 0;
 	} else if (serv == 2) {
     irq_add(II_TIMER1, AAS_FastTimer1InterruptHandler);
-    AAS_MOD_Play(AAS_DATA_MOD_CreamOfTheEarth);
+    AAS_MOD_Play(AAS_DATA_MOD_bla);
     return 0;
   } else if ( serv == 3) {
     AAS_MOD_Stop();
