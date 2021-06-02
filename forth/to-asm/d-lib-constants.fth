@@ -409,11 +409,14 @@ variable spr-deallocs
 
 : spr-y@ c@ ;              ( spr -- y )
 : spr-y! c! ;              ( y spr -- )
-: spr-x@ attr1@ 01ff and ; ( spr -- x )
-: spr-x! dup attr1@ fe00 and rot 01ff and or swap attr1! ; ( x spr -- )
+: spr-x@ attr1@ attr1-x-mask and ; ( spr -- x )
+: spr-x! ( x spr -- )
+  dup attr1@ attr1-x-mask invert and rot attr1-x-mask and or swap attr1! ;
 
 : spr-pal@ attr2@ c rshift ; ( spr -- pal )
 : spr-pal! dup attr2@ 0fff and rot c lshift or swap ! ; ( pal spr -- )
+: spr-tid! ( tid spr -- )
+  dup attr2@ attr2-id-mask invert and rot attr2-id-mask and or swap attr2! ;
 
 : spr-z@ 7 + c@ ; ( spr - z-depth )
 : spr-z! 7 + c! ; ( spr - z-depth )
@@ -430,6 +433,7 @@ variable spr-deallocs
 ( key handling )
 
 ( key index, for the bit-tribool )
+( TODO: i think we don't need these and we can just use the direction constants straight )
 4 constant ki-right
 5 constant ki-left
 6 constant ki-up
@@ -573,7 +577,7 @@ variable key-prev
 : obj-spr! ! ; ( spr obj -- )
 : obj-coord cell + ; ( obj -- coord-addr )
 : obj-coord@ cell + @ ; ( obj -- coord )
-: obj-coord! cell + ! ; ( obj -- coord )
+: obj-coord! cell + ! ; ( coord obj -- )
 : obj-dir@ 2 cells + h@ ; ( obj -- dir )
 : obj-dir! 2 cells + h! ; ( dir obj -- )
 : obj-actions@ a + h@ ; ( obj -- actions )
@@ -581,6 +585,8 @@ variable key-prev
 : obj-cb-offs 3 cells + ; ( obj -- coord ) ( object collision box offset )
 : obj-cb-width 4 cells + ; ( obj -- width-addr )
 : obj-cb-height 5 cells + ; ( obj -- height-addr )
+: obj-tid-base@ 6 cells + @ ; ( obj -- tile-id-base )
+: obj-tid-base! 6 cells + ! ; ( tile-id-base obj -- )
 : obj-frame@ 6 cells + h@ ; ( obj -- frame )
 : obj-frame! 6 cells + h! ; ( frame obj -- )
 
@@ -726,8 +732,6 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 
 ( animation )
 
-( standing left right up down )
-
 : update-dir ( obj -- )
   key-dir key-transit if ( only update if there are actually any key-press changes 
     ( if we point to same direction as before we don't change direction, )
@@ -740,12 +744,30 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
       right key-is-down if right swap obj-dir! else
       up    key-is-down if up    swap obj-dir! else
       down  key-is-down if down  swap obj-dir! else
-      then then then then
+      drop then then then then
     then
   else drop then ;
 
+: set-obj-tid ( tid-offs obj )
+  tuck obj-tid-base@ +
+  swap obj-spr@ spr-tid! ;
+
+: spr-dir! ( obj )
+  dup obj-dir@
+  dup down  = if drop 0  swap set-obj-tid else
+  dup up    = if drop 8  swap set-obj-tid else
+  dup left  = if drop 10 swap set-obj-tid else
+  dup right = if drop 18 swap set-obj-tid else
+  2drop then then then then ;
+
+: update-spr-frame ( obj -- )
+  dup update-dir
+  spr-dir! ;
+
+
 : update-anim ( obj -- )
-  update-dir ;
+  update-spr-frame
+;
   
 ( beany == player character sprite )
 obj-size array beany
@@ -789,10 +811,11 @@ obj-size array beany
   beany
   dup set-spr-cb-16x32
   dup 0 swap obj-frame!
-  dup 0 swap obj-dir!
+  dup down swap obj-dir!
+  dup 0 swap obj-tid-base! ( so basically mem-vram-obj )
   obj-coord 90 60 rot store-xy
 
-  snaggle-tiles mem-vram-obj 100 move
+  snaggle-tiles mem-vram-obj 400 move
   snaggle-pal mem-pal-obj 200 move
 
   init-spr-list
