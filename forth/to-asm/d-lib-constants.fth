@@ -117,6 +117,9 @@ c000 constant bg-aff-128x128 ( affine bg, 128x128, 1024x1024 px )
 c000 constant bg-size-mask
   14 constant bg-size-shift
 
+: cbb-offs cbb-size * mem-vram-bg + ; ( index -- addr )
+: sbb-offs sbb-size * mem-vram-bg + ; ( index -- addr )
+
 ( bg scroll registers, write only )
 mem-io 010 + constant reg-bg0hofs ( bg0 horizontal scroll )
 mem-io 012 + constant reg-bg0vofs ( bg0 vertical scroll )
@@ -681,8 +684,8 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 : update-shadow-bg-y bg-coord y! ; ( bg-y-coord -- )
 : update-shadow-bg-coord dup x-get update-shadow-bg-x y-get update-shadow-bg-y ; ( coord )
 
-: update-bg-x bg-coord x@ reg-bg0hofs h! ; ( -- )
-: update-bg-y bg-coord y@ reg-bg0vofs h! ; ( -- )
+: update-bg-x bg-coord x@ reg-bg2hofs h! ; ( -- )
+: update-bg-y bg-coord y@ reg-bg2vofs h! ; ( -- )
 : update-bg-coord update-bg-x update-bg-y ; ( -- )
 
 : clamp-bg-min dup 0 < if drop 0 then ; ( x-or-y-bg-coord )
@@ -826,8 +829,10 @@ obj-size array beany
 
 : apt-graphics-mode-init ( -- )
   ( set up dispcnt and bg control regs for apartment scene )
-  dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or reg-dispcnt set-reg
-  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg0cnt set-reg ;
+  dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or dcnt-bg2 or dcnt-bg3 or reg-dispcnt set-reg
+  2 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg3cnt set-reg
+  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg2cnt set-reg
+  2 bg-cbb 1d bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg0cnt set-reg ;
 
 : apt-bg-init ( -- )
   40 map-width !
@@ -838,15 +843,19 @@ obj-size array beany
   1d bg-y-max-clamp-mod !
 
   ( set up bg graphics )
-  apt-tiles mem-vram-bg apt-tiles-len move
+  apt-tiles 0 cbb-offs apt-tiles-len move
   apt-pal mem-pal-bg apt-pal-len move
-  apt-map sbb-size 1e * mem-vram + apt-map-len move ;
+  apt-map 1e sbb-offs apt-map-len move ;
+
+: font-init
+  font-tiles 2 cbb-offs font-len move ;
 
 ( init all )
 : init ( -- )
   key-init
   beany-init
   apt-bg-init
+  font-init
   update-world
   apt-graphics-mode-init
   gloop ;

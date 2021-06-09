@@ -869,7 +869,13 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
     head apt_map_len,11,"apt-map-len",docon,apt_map
   .word 4096
 
-    head beany_tiles,11,"beany-tiles",docon,apt_map_len
+    head font_tiles,10,"font-tiles",docon,apt_map_len
+  .word gba_font
+  .align
+    head font_len,10,"font-len",docon,font_tiles
+  .word 16384
+
+    head beany_tiles,11,"beany-tiles",docon,font_len
   .word beany_sheetTiles
     head beany_pal,9,"beany-pal",docon,beany_tiles
   .word beany_sheetPal
