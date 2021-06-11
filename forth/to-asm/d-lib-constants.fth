@@ -775,6 +775,87 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 ( beany == player character sprite )
 obj-size array beany
 
+( text )
+variable font-tiles-base
+variable font-map-base
+
+variable print-x-base
+variable print-x-len
+variable print-y-base
+variable print-y-len
+variable print-x-cur
+variable print-y-cur
+
+1e 14 * array print-map
+
+: print-pos 1e * + print-map + ; ( x y - pos )
+: font-map-pos 20 * + 2 * font-map-base @ + ; ( x y )
+
+: print-x-inc print-x-cur dup @ 1+ swap ! ; ( -- )
+: print-y-inc print-y-cur dup @ 1+ swap ! ; ( -- )
+
+: print-wrap-y ( y-old -- y-new )
+  dup print-y-base @ print-y-len @ + =
+  if drop print-y-base @ then ;
+
+: print-wrap-y-set ( -- )
+  print-y-cur @ print-wrap-y print-y-cur ! ;
+
+: print-clear-curr-line ( -- )
+  print-y-cur @ print-x-base @ print-x-len @ + print-x-base @ do
+    dup i swap print-pos bl swap ! loop drop ;
+
+: print-check-x-bounds ( -- )
+  print-x-cur @ print-x-base @ print-x-len @ + = ;
+
+: print-set-char ( c -- )
+  print-x-cur @ print-y-cur @ print-pos c! ;
+
+( font-map-base @ i 2 * + )
+( 40 font-map-base @ h! )
+: print-set-next-free-pos ( -- )
+  print-check-x-bounds
+  if print-x-base @ print-x-cur !
+     print-y-inc
+     print-wrap-y-set
+     print-clear-curr-line
+  else print-x-inc then ;
+
+: print-char ( c -- )
+  print-set-next-free-pos
+  print-set-char ;
+
+: print-dialog
+  print-y-cur @ 1+ print-wrap-y
+  print-y-base @ dup print-y-len @ + swap do
+    print-x-base @ dup print-x-len @ + 1+ swap do
+      dup
+      i swap print-pos c@
+      i j font-map-pos h!
+    loop
+    1+ print-wrap-y
+  loop
+  drop ;
+
+: set-dialog-dimensions
+  2  print-x-base !
+  17 print-x-len !
+  2 print-y-base !
+  4 print-y-len !
+  print-x-base @ 1- print-x-cur !
+  print-y-base @ print-y-cur ! ;
+
+: test-str s" I am a little text, and I am awesome so you see I will wrap around" ;
+
+: str-print ( addr n -- )
+  0 do
+    dup
+    i + c@ print-char
+  loop drop
+  print-dialog ;
+
+: str-test test-str str-print ;
+
 
 ( game loop )
 
@@ -806,6 +887,14 @@ obj-size array beany
 
 ( initialization )
 
+: font-init
+  2  cbb-offs font-tiles-base !
+  font-tiles font-tiles-base @ font-len move
+  1d sbb-offs font-map-base !
+  set-dialog-dimensions
+  str-test ;
+
+
 : beany-init ( -- )
   1 mov-delta !
   78 beany-equ-offs-x !
@@ -827,12 +916,14 @@ obj-size array beany
   attr0-tall beany-equ-offs-y @ or beany @ attr0!
   beany-equ-offs-x @ attr1-size-16x32 or beany @ attr1! ;
 
+
 : apt-graphics-mode-init ( -- )
   ( set up dispcnt and bg control regs for apartment scene )
   dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or dcnt-bg2 or dcnt-bg3 or reg-dispcnt set-reg
   2 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg3cnt set-reg
   0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg2cnt set-reg
   2 bg-cbb 1d bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg0cnt set-reg ;
+
 
 : apt-bg-init ( -- )
   40 map-width !
@@ -847,8 +938,6 @@ obj-size array beany
   apt-pal mem-pal-bg apt-pal-len move
   apt-map 1e sbb-offs apt-map-len move ;
 
-: font-init
-  font-tiles 2 cbb-offs font-len move ;
 
 ( init all )
 : init ( -- )
