@@ -778,6 +778,7 @@ obj-size array beany
 ( text )
 variable font-tiles-base
 variable font-map-base
+variable font-bg-map-base
 
 variable print-x-base
 variable print-x-len
@@ -790,6 +791,7 @@ variable print-y-cur
 
 : print-pos 1e * + print-map + ; ( x y - pos )
 : font-map-pos 20 * + 2 * font-map-base @ + ; ( x y )
+: font-bg-map-pos 20 * + 2 * font-bg-map-base @ + ; ( x y )
 
 : print-x-inc print-x-cur dup @ 1+ swap ! ; ( -- )
 : print-y-inc print-y-cur dup @ 1+ swap ! ; ( -- )
@@ -803,32 +805,38 @@ variable print-y-cur
 
 : print-clear-curr-line ( -- )
   print-y-cur @ print-x-base @ print-x-len @ + print-x-base @ do
-    dup i swap print-pos bl swap ! loop drop ;
+    dup i swap print-pos bl swap c! loop drop ;
 
 : print-check-x-bounds ( -- )
-  print-x-cur @ print-x-base @ print-x-len @ + = ;
+  print-x-cur @ print-x-base @ print-x-len @ 1- + = ;
 
 : print-set-char ( c -- )
   print-x-cur @ print-y-cur @ print-pos c! ;
 
-( font-map-base @ i 2 * + )
-( 40 font-map-base @ h! )
+: print-nxt-line ( -- )
+  print-x-base @ print-x-cur !
+  print-y-inc
+  print-wrap-y-set
+  print-clear-curr-line ;
+
 : print-set-next-free-pos ( -- )
   print-check-x-bounds
-  if print-x-base @ print-x-cur !
-     print-y-inc
-     print-wrap-y-set
-     print-clear-curr-line
+  if print-nxt-line
   else print-x-inc then ;
 
 : print-char ( c -- )
-  print-set-next-free-pos
-  print-set-char ;
+  dup 0d =
+  if drop print-nxt-line
+     print-x-base @ 1- print-x-cur !
+  else
+    print-set-next-free-pos
+    print-set-char
+  then ;
 
 : print-dialog
   print-y-cur @ 1+ print-wrap-y
   print-y-base @ dup print-y-len @ + swap do
-    print-x-base @ dup print-x-len @ + 1+ swap do
+    print-x-base @ dup print-x-len @ + swap do
       dup
       i swap print-pos c@
       i j font-map-pos h!
@@ -837,24 +845,39 @@ variable print-y-cur
   loop
   drop ;
 
+: draw-txt-bg ( tile -- )
+  print-y-base @ dup print-y-len @ + swap do
+    ( print-x-base @ dup print-x-len @ + 1+ swap do )
+    1e 0 do
+      dup i j font-bg-map-pos h!
+    loop
+  loop drop ;
+
+
 : set-dialog-dimensions
-  2  print-x-base !
-  17 print-x-len !
-  2 print-y-base !
+  1  print-x-base !
+  1c print-x-len !
+  0 print-y-base !
   4 print-y-len !
   print-x-base @ 1- print-x-cur !
   print-y-base @ print-y-cur ! ;
 
-: test-str s" I am a little text, and I am awesome so you see I will wrap around" ;
+: test-str1 s" I am a little text, and I am awesome so you see." ;
+
+: test-str2 s" I will wrap around again and again, do you hear!" ;
 
 : str-print ( addr n -- )
   0 do
     dup
     i + c@ print-char
-  loop drop
-  print-dialog ;
+  loop drop ;
 
-: str-test test-str str-print ;
+: str-test
+  5 draw-txt-bg
+  test-str1 str-print
+  0d print-char
+  test-str2 str-print
+  print-dialog ;
 
 
 ( game loop )
@@ -891,6 +914,7 @@ variable print-y-cur
   2  cbb-offs font-tiles-base !
   font-tiles font-tiles-base @ font-len move
   1d sbb-offs font-map-base !
+  1c sbb-offs font-bg-map-base !
   set-dialog-dimensions
   str-test ;
 
@@ -919,10 +943,16 @@ variable print-y-cur
 
 : apt-graphics-mode-init ( -- )
   ( set up dispcnt and bg control regs for apartment scene )
-  dcnt-obj dcnt-obj-1d or dcnt-mode0 or dcnt-bg0 or dcnt-bg2 or dcnt-bg3 or reg-dispcnt set-reg
-  2 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg3cnt set-reg
-  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg2cnt set-reg
-  2 bg-cbb 1d bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg0cnt set-reg ;
+  dcnt-obj dcnt-obj-1d or dcnt-mode0 or
+  dcnt-bg0 or
+  dcnt-bg1 or
+  dcnt-bg2 or
+  ( dcnt-bg3 or )
+  reg-dispcnt set-reg
+  2 bg-cbb 1d bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg0cnt set-reg ( txt )
+  0 bg-cbb 1c bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg1cnt set-reg ( txt bg )
+  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg2cnt set-reg ( apt )
+  ( 2 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg3cnt set-reg ) ( weird ) ;
 
 
 : apt-bg-init ( -- )
