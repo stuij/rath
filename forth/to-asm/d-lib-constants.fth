@@ -222,6 +222,9 @@ mem-io 050 + constant reg-bldcnt ( blend control )
 3f00 constant bld-bot-mask
    8 constant bld-bot-shift
 
+: bld-set ( mode top bot -- )
+  bld-bot-shift lshift or or reg-bldcnt h! ;
+
 ( blend weights )
 mem-io 052 + constant reg-bldalpha ( blend alpha )
 
@@ -230,6 +233,9 @@ mem-io 052 + constant reg-bldalpha ( blend alpha )
 
 1f00 constant bld-evb-mask
    8 constant bld-evb-shift
+
+: bldalpha-set ( bld-eva bld-evb -- )
+  bld-evb-shift lshift or reg-bldalpha h! ;
 
 ( fade levels )
 mem-io 054 + constant reg-bldy
@@ -554,8 +560,7 @@ variable key-prev
   else
     drop child-spr@ spr-head !
   then
-  1 spr-deallocs +!
-;
+  1 spr-deallocs +! ;
 
 : spr-to-oam ( -- )
   spr-head @ mem-oam
@@ -570,8 +575,7 @@ variable key-prev
 
 : init-spr-list ( -- )
   spr-start dup clear-spr spr-head !
-  0 spr-deallocs !
-;
+  0 spr-deallocs ! ;
 
 
 ( sprite objects )
@@ -872,6 +876,10 @@ variable print-y-cur
     i + c@ print-char
   loop drop ;
 
+: set-transp-txt-bg ( -- )
+  bld-std bld-bg1 bld-bg2 bld-set
+  6 4 bldalpha-set ;
+
 : str-test
   5 draw-txt-bg
   test-str1 str-print
@@ -916,6 +924,7 @@ variable print-y-cur
   1d sbb-offs font-map-base !
   1c sbb-offs font-bg-map-base !
   set-dialog-dimensions
+  set-transp-txt-bg
   str-test ;
 
 
