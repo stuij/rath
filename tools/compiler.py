@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Very very naive forth cross-compiler, just about functional enough to make this
 # workable for a simple entry for a GBA game competition.
@@ -90,6 +90,17 @@ class Nr(Stmt):
     def print(self):
         return "const: {0} . {1} _ {2}".format(self.name, self.val, self.tokens[0].line)
 
+class Str(Stmt):
+    def __init__(self, name, tokens, val):
+        super().__init__(name, tokens)
+        self.val = val
+
+    def to_ass(self, file, prev_word):
+        file.write('xsquote\n.byte {}\n.ascii "{}"\n.align\n'
+                   .format(hex(len(self.val)), self.val))
+
+    def print(self):
+        return "str: {0} . {1} _ {2}".format(self.name, self.val, self.tokens[0].line)
 
 class Word(Stmt):
     def __init__(self, name, tokens, words):
@@ -104,10 +115,16 @@ class Word(Stmt):
         if not self.words or not isinstance(self.words[0], Label):
             file.write("    .word ")
 
+        # It has been a long time since I wrote something this ugly,
+        # but I don't care anymore. We need a true compiler and this
+        # should be thrown away anyways
         if self.words:
             word_size = len(self.words)
             for i, word in enumerate(self.words):
                 word.to_ass(file, prev_word)
+                if isinstance(word, Str):
+                    file.write("    .word ")
+                    continue
                 if (i < word_size - 1 and
                     not isinstance(word, Label) and
                     not isinstance(self.words[i+1], Label)):
@@ -229,6 +246,24 @@ def peek(tokens):
 
 
 # parse
+def parse_string(context):
+    tokens = context.tokens
+    # remove `s"'
+    str_toks = [tokens.pop(0)]
+    first = tokens.pop(0)
+    str_toks.append(first)
+    string = first.tok
+    while True:
+        next = tokens.pop(0)
+        str_toks.append(next)
+        str_split = next.tok.split('"')
+        if len(str_split) > 2:
+            raise CompileError("string delimiter found in middle of word: {}".format(next.tok))
+        string += " " + str_split[0]
+        if len(str_split) == 2:
+            break
+    return Str(first.tok, str_toks, string)
+
 def colon_compile(context):
     words = []
     tokens = context.tokens
@@ -307,6 +342,8 @@ def colon_compile(context):
             assert branch_stack, "branch stack is empty!"
             label = branch_stack.pop()
             words.append(Branch(label.name, tokens.pop(0), next))
+        elif next  == "s\"":
+            words.append(parse_string(context))
         else:
             words.append(tokens.pop(0))
 
@@ -449,9 +486,11 @@ name_ass_table = {
     'do':    'xdo',
     'loop':  'xloop',
     '+loop': 'xplusloop',
-    '.s':   'dots',
-    '>r': 'tor',
-    'r>': 'rfrom',
+    '.s':    'dots',
+    '>r':    'tor',
+    'r>':    'rfrom',
+    '1+':    'oneplus',
+    '1-':    'oneminus',
 }
 
 def try_ass_sub(name):
