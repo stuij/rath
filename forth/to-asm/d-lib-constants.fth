@@ -587,8 +587,8 @@ variable key-prev
 : obj-coord! cell + ! ; ( coord obj -- )
 : obj-dir@ 2 cells + h@ ; ( obj -- dir )
 : obj-dir! 2 cells + h! ; ( dir obj -- )
-: obj-actions@ a + h@ ; ( obj -- actions )
-: obj-actions! a + h! ; ( actions obj -- )
+: obj-toi@ a + h@ ; ( obj -- toi )
+: obj-toi! a + h! ; ( toi obj -- )
 : obj-cb-offs 3 cells + ; ( obj -- coord ) ( object collision box offset )
 : obj-cb-width 4 cells + ; ( obj -- width-addr )
 : obj-cb-height 5 cells + ; ( obj -- height-addr )
@@ -652,7 +652,7 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 
 ( things of interest )
 
-: get-toi toi-map @ + c@ ; ( offs-tile -- toi )
+: get-toi 2 * toi-map @ + c@ ; ( offs-tile -- toi )
 
 ( this fn uses width and height of a bounding box to check all the squares of )
 ( that box for points of interest, and will push them on the stack )
@@ -726,7 +726,9 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 
 : update-coord ( obj -- ) ( currently the only thing of interest is a collision )
   dup obj-coord@ get-nxt-coord 2dup swap ( obj nxt-coord nxt-coord obj )
-  dup obj-cb-offs @ over obj-cb-width @ 1 + rot obj-cb-height @ check-toi-map not ( obj nxt-coord !toi )
+  dup obj-cb-offs @ over obj-cb-width @ 1 + rot obj-cb-height @
+  check-toi-map dup >r rot dup r> swap obj-toi! -rot
+  1 and not ( obj nxt-coord !toi )
   if
     2dup ( obj nxt-coord obj nxt-coord )
     swap ( obj nxt-coord nxt-coord obj )
@@ -857,7 +859,6 @@ variable print-y-cur
     loop
   loop drop ;
 
-
 : set-dialog-dimensions
   1  print-x-base !
   1c print-x-len !
@@ -888,6 +889,28 @@ variable print-y-cur
   print-dialog ;
 
 
+( higher level )
+( feels like we're finally getting ready to implement more abstract game logic )
+
+( actions/things of interest )
+
+: kitchen-str s" Guess I'll fry some eggs." ;
+
+: print-kitchen ( -- )
+  kitchen-str str-print
+  5 draw-txt-bg
+  print-dialog ;
+
+: dispatch-toi ( toi -- )
+  dup 1 1 lshift and if drop print-kitchen else
+  drop then
+;
+
+
+: update-actions ( -- )
+  beany obj-toi@ dispatch-toi
+;
+
 ( game loop )
 
 ( updates that need to happen within hard boundry of vblank, aka graphics updates )
@@ -898,6 +921,7 @@ variable print-y-cur
 ( update things that are less time-sensitive )
 : update-loose ( -- )
   beany dup update-coord
+  update-actions
   update-anim ;
 
 : update-world
@@ -925,7 +949,8 @@ variable print-y-cur
   1c sbb-offs font-bg-map-base !
   set-dialog-dimensions
   set-transp-txt-bg
-  str-test ;
+  0 print-dirty !
+  ( str-test ) ;
 
 
 : beany-init ( -- )
