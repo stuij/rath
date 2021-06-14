@@ -274,16 +274,16 @@ mem-io 10e + constant reg-tm3cnt ( timer 3 control )
 mem-io 130 + constant reg-keyinput ( key status, read only?? )
 mem-io 132 + constant reg-keycnt ( key irq control )
 
-0001 constant a
-0002 constant b
+0001 constant key-a
+0002 constant key-b
 0004 constant select
 0008 constant start
 0010 constant right
 0020 constant left
 0040 constant up
 0080 constant down
-0100 constant r
-0200 constant l
+0100 constant key-r
+0200 constant key-l
 
 0009 constant key-accept ( A or start )
 030c constant key-reset  ( start + select + L + R )
