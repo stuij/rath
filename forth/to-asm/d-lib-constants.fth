@@ -652,7 +652,7 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 
 ( things of interest )
 
-: get-toi 2 * toi-map @ + c@ ; ( offs-tile -- toi )
+: get-toi 2 * toi-map @ + h@ ; ( offs-tile -- toi )
 
 ( this fn uses width and height of a bounding box to check all the squares of )
 ( that box for points of interest, and will push them on the stack )
