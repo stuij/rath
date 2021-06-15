@@ -400,6 +400,7 @@ f000 constant attr2-palbank-mask
 ( wait for vblank interrupt )
 : start-music 1 2 bdos drop ; ( -- )
 : stop-music 1 3 bdos drop ; ( -- )
+: feed-music 1 4 bdos drop ; ( -- )
 
 ( sprite handling )
 
@@ -793,6 +794,9 @@ variable print-y-len
 variable print-x-cur
 variable print-y-cur
 
+variable print-dirty ( is there anything to print on-screen )
+variable in-dialog
+
 1e 14 * array print-map
 
 : print-pos 1e * + print-map + ; ( x y - pos )
@@ -831,10 +835,12 @@ variable print-y-cur
   else print-x-inc then ;
 
 : print-char ( c -- )
-  dup 0d =
+  dup 0a =
   if drop print-nxt-line
+     feed-music
      print-x-base @ 1- print-x-cur !
   else
+    feed-music
     print-set-next-free-pos
     print-set-char
   then ;
@@ -844,6 +850,21 @@ variable print-y-cur
   print-y-base @ dup print-y-len @ + swap do
     print-x-base @ dup print-x-len @ + swap do
       dup
+      vsync ( we want to slow down text showing )
+      ( i 2 mod not if vsync then )
+      i swap print-pos c@
+      i j font-map-pos h!
+    loop
+    1+ print-wrap-y
+  loop
+  drop ;
+
+: clear-dialog-text
+  print-y-cur @ 1+ print-wrap-y
+  print-y-base @ dup print-y-len @ + swap do
+    print-x-base @ dup print-x-len @ + swap do
+      dup
+      i 4 mod not if feed-music then
       i swap print-pos c@
       i j font-map-pos h!
     loop
@@ -856,16 +877,33 @@ variable print-y-cur
     ( print-x-base @ dup print-x-len @ + 1+ swap do )
     1e 0 do
       dup i j font-bg-map-pos h!
+      i 4 mod not if feed-music then
     loop
   loop drop ;
+
+: reset-dialog-pos ( -- )
+  print-x-base @ 1- print-x-cur !
+  print-y-base @ print-y-cur ! ;
 
 : set-dialog-dimensions
   1  print-x-base !
   1c print-x-len !
   0 print-y-base !
   4 print-y-len !
-  print-x-base @ 1- print-x-cur !
-  print-y-base @ print-y-cur ! ;
+  reset-dialog-pos ;
+
+: clear-dialog ( -- )
+  print-y-base @ dup print-y-len @ + swap do
+    i print-y-cur !
+    feed-music
+    print-clear-curr-line
+  loop
+  clear-dialog-text
+  reset-dialog-pos ;
+
+: dissolve-dialog ( -- )
+  clear-dialog
+  0 draw-txt-bg ;
 
 : test-str1 s" I am a little text, and I am awesome so you see." ;
 
@@ -894,16 +932,51 @@ variable print-y-cur
 
 ( actions/things of interest )
 
-: kitchen-str s" Guess I'll fry some eggs." ;
+0 constant collisions
+1 constant kitchen
+2 constant sink
+3 constant toilet
+4 constant bath
+5 constant couch
+6 constant tv
+7 constant front-door
+8 constant desk
+9 constant sleep
+a constant closet
 
-: print-kitchen ( -- )
-  kitchen-str str-print
+: kitchen-str    s" Where is my green-blue\nspatula!" ;
+: sink-str       s" Pyjama's, you're my frend\ntill the end.." ;
+: toilet-str     s" You ascend your throne, whipout your GBA, and settle\ndown for another 3 hr\nsession of Crazy Taxi." ;
+: bath-str       s" The bath just reminds you ofthat day rubber ducky went\nout to get a pack of smokes." ;
+: couch-str      s" Shall I nap on you now, or \nwait for 15 minutes??" ;
+: tv-str         s" ... 12 years of lock-down.. is it TOO much??? ..." ;
+: front-door-str s" You shall not pass!!" ;
+: desk-str       s" should get ready for that\nZoom meeting with rubber\nducky in half an hour" ;
+: sleep-str      s" why not.." ;
+: closet-str     s" You open the closet door,\nsnuggle up in the left\ncorner and rock your body\nback and forth for a bit." ;
+
+: print-msg ( addr size dia-len -- )
+  print-y-len !
+  str-print
   5 draw-txt-bg
-  print-dialog ;
+  print-dialog
+  1 in-dialog ! ;
+
+: print-dispatch ( addr size dia-len -- )
+  key-a key-hit if print-msg else 2drop drop then ;
 
 : dispatch-toi ( toi -- )
-  dup 1 1 lshift and if drop print-kitchen else
-  drop then
+  dup 1 kitchen    lshift and if drop kitchen-str    2 print-dispatch else
+  dup 1 sleep      lshift and if drop sleep-str      1 print-dispatch else
+  dup 1 sink       lshift and if drop sink-str       2 print-dispatch else
+  dup 1 toilet     lshift and if drop toilet-str     4 print-dispatch else
+  dup 1 bath       lshift and if drop bath-str       3 print-dispatch else
+  dup 1 couch      lshift and if drop couch-str      2 print-dispatch else
+  dup 1 tv         lshift and if drop tv-str         2 print-dispatch else
+  dup 1 front-door lshift and if drop front-door-str 1 print-dispatch else
+  dup 1 desk       lshift and if drop desk-str       3 print-dispatch else
+  dup 1 closet     lshift and if drop closet-str     4 print-dispatch else
+  drop then then then then then then then then then then
 ;
 
 
@@ -920,9 +993,20 @@ variable print-y-cur
 
 ( update things that are less time-sensitive )
 : update-loose ( -- )
-  beany dup update-coord
-  update-actions
-  update-anim ;
+  in-dialog @ if
+    key-a key-hit if
+      dissolve-dialog
+      0 in-dialog !
+    then
+  else
+    beany dup update-coord
+    update-actions
+    update-anim
+  then
+
+  ( some things we will update unconditionally )
+  ( print-dirty @ if print-dialog then )
+;
 
 : update-world
     update-vblank-hard
@@ -950,6 +1034,7 @@ variable print-y-cur
   set-dialog-dimensions
   set-transp-txt-bg
   0 print-dirty !
+  0 in-dialog !
   ( str-test ) ;
 
 

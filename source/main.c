@@ -131,6 +131,8 @@ int EWRAM_CODE service(int serv, int param) {
       AAS_DoWork();
       VBlankIntrWait();
     }
+  } else if ( serv == 4) {
+    AAS_DoWork();
   }
   return 0;
 }
