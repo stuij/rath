@@ -735,7 +735,7 @@ filbeg:	.word twodup,xor
 	.word qbranch,filrep
 	.word rfetch,over,chstore,charplus
 	.word branch,filbeg
-filrep:	.word rfrom,drop,twodrop
+filrep:	.word rfrom,drop,twodrop,exit
 
 #Z WMOVE   a-addr1 a-addr2 u --  move word steps from bottom
 # hi-level version
@@ -851,7 +851,13 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 .incbin "snaggle.pal.bin"
 .align
 
-    head apt_tiles,9,"apt-tiles",dovar,snaggle_pal
+    head splash,6,"splash",dovar,snaggle_pal
+.incbin "../assets/ass.img.bin"
+.align
+    head splash_len,10,"splash-len",docon,splash
+  .word 76800
+
+    head apt_tiles,9,"apt-tiles",dovar,splash_len
 .incbin "apartment-map.img.bin"
 .align
     head apt_tiles_len,13,"apt-tiles-len",docon,apt_tiles

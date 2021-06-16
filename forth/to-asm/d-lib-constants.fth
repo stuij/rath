@@ -401,6 +401,7 @@ f000 constant attr2-palbank-mask
 : start-music 1 2 bdos drop ; ( -- )
 : stop-music 1 3 bdos drop ; ( -- )
 : feed-music 1 4 bdos drop ; ( -- )
+: init-music 1 5 bdos drop ; ( -- )
 
 ( sprite handling )
 
@@ -775,14 +776,16 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
   spr-dir! ;
 
 
-: update-anim ( obj -- )
-  update-spr-frame
-;
-  
+( higher logic general )
+
+( continuation of game logic )
+variable continuation
+
 ( beany == player character sprite )
 obj-size array beany
 
 ( text )
+
 variable font-tiles-base
 variable font-map-base
 variable font-bg-map-base
@@ -793,9 +796,6 @@ variable print-y-base
 variable print-y-len
 variable print-x-cur
 variable print-y-cur
-
-variable print-dirty ( is there anything to print on-screen )
-variable in-dialog
 
 1e 14 * array print-map
 
@@ -827,7 +827,7 @@ variable in-dialog
   print-x-base @ print-x-cur !
   print-y-inc
   print-wrap-y-set
-  print-clear-curr-line ;
+  ( print-clear-curr-line ) ;
 
 : print-set-next-free-pos ( -- )
   print-check-x-bounds
@@ -927,9 +927,6 @@ variable in-dialog
   print-dialog ;
 
 
-( higher level )
-( feels like we're finally getting ready to implement more abstract game logic )
-
 ( actions/things of interest )
 
 0 constant collisions
@@ -944,6 +941,7 @@ variable in-dialog
 9 constant sleep
 a constant closet
 
+: intro-str      s" \nIt's now 1509 days since\nlockdown. It's your life,\nhave fun.\n\n\nPress A to interact with\nthings and to exit dialogs.\n\n" ;
 : kitchen-str    s" Where is my green-blue\nspatula!" ;
 : sink-str       s" Pyjama's, you're my frend\ntill the end.." ;
 : toilet-str     s" You ascend your throne, whipout your GBA, and settle\ndown for another 3 hr\nsession of Crazy Taxi." ;
@@ -960,7 +958,7 @@ a constant closet
   str-print
   5 draw-txt-bg
   print-dialog
-  1 in-dialog ! ;
+  ['] in-dialog continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
 
 : print-dispatch ( addr size dia-len -- )
   key-a key-hit if print-msg else 2drop drop then ;
@@ -979,38 +977,43 @@ a constant closet
   drop then then then then then then then then then then
 ;
 
-
-: update-actions ( -- )
-  beany obj-toi@ dispatch-toi
-;
-
-( game loop )
+: update-anim ( obj -- )
+  update-spr-frame ;
 
 ( updates that need to happen within hard boundry of vblank, aka graphics updates )
 : update-vblank-hard ( -- )
   update-bg-coord
   spr-to-oam ;
 
+: update-actions ( -- )
+  beany obj-toi@ dispatch-toi ;
+
+: in-default ( -- )
+  beany dup update-coord
+  update-actions
+  update-anim ;
+
+: in-dialog ( -- )
+  key-a key-hit if
+    dissolve-dialog
+    ['] in-default continuation !
+  then ;
+
+: intro ( -- )
+ intro-str a print-msg ;
+
 ( update things that are less time-sensitive )
 : update-loose ( -- )
-  in-dialog @ if
-    key-a key-hit if
-      dissolve-dialog
-      0 in-dialog !
-    then
-  else
-    beany dup update-coord
-    update-actions
-    update-anim
-  then
-
+  continuation @ execute
   ( some things we will update unconditionally )
-  ( print-dirty @ if print-dialog then )
 ;
 
 : update-world
     update-vblank-hard
     update-loose ;
+
+
+( game loop )
 
 : gloop ( -- )
   start-music
@@ -1033,8 +1036,6 @@ a constant closet
   1c sbb-offs font-bg-map-base !
   set-dialog-dimensions
   set-transp-txt-bg
-  0 print-dirty !
-  0 in-dialog !
   ( str-test ) ;
 
 
@@ -1089,14 +1090,37 @@ a constant closet
 
 
 ( init all )
-: init ( -- )
+: apt-init ( -- )
   key-init
   beany-init
   apt-bg-init
   font-init
+  ['] in-default continuation !
+  ( init-music )
   update-world
   apt-graphics-mode-init
+  ['] intro continuation !
   gloop ;
+
+: splash-init
+  splash 0 cbb-offs splash-len move
+  dcnt-mode3 dcnt-bg2 or reg-dispcnt set-reg ;
+
+: splash-loop
+  start-music
+  begin
+    vsync
+    key-poll
+    key-a key-hit
+  until
+  stop-music ;
+
+: init
+  splash-init
+  init-music
+  splash-loop
+  1c sbb-offs sbb-size 2 * 0 fill
+  apt-init ;
 
 ( implement this at some point: commercial rom WAITCNT settings )
 ( REG_WAITCNT = 0x4317 )

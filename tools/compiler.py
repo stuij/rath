@@ -96,8 +96,10 @@ class Str(Stmt):
         self.val = val
 
     def to_ass(self, file, prev_word):
+        escapes = self.val.count('\\')
+        size = len(self.val) - escapes
         file.write('xsquote\n.byte {}\n.ascii "{}"\n.align\n'
-                   .format(hex(len(self.val)), self.val))
+                   .format(hex(size), self.val))
 
     def print(self):
         return "str: {0} . {1} _ {2}".format(self.name, self.val, self.tokens[0].line)

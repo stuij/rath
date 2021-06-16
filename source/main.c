@@ -33,13 +33,13 @@ GBFS_ENTRY *gbfs_entry;
 u8 *sourcePos;
 u32 sourceLen;
 
+int in_music;
+
 int main() {
   // Set up the interrupt handlers
   irq_init(NULL);
   // Enable Vblank Interrupt to allow VblankIntrWait
   irq_add(II_VBLANK, NULL);
-  // the timer bits for the AAS engine
-  // irq_add(II_TIMER1, AAS_FastTimer1InterruptHandler);
 
 #ifdef LINK_UART
   init_circ_buff(&g_uart_rcv_buffer, g_rcv_buffer, UART_RCV_BUFFER_SIZE);
@@ -48,12 +48,7 @@ int main() {
   irq_add(II_SERIAL, handle_uart_gbaser);
 #endif
 
-  // Initialise AAS
-  AAS_SetConfig(
-      AAS_CONFIG_MIX_32KHZ,
-      AAS_CONFIG_CHANS_8,
-      AAS_CONFIG_SPATIAL_STEREO,
-      AAS_CONFIG_DYNAMIC_OFF );
+  in_music = 0;
 
   // Initialize sprites (outside of screen)
   OBJ_ATTR obj_attr = {160, 240, 0, 0};
@@ -117,22 +112,38 @@ int EWRAM_CODE service(int serv, int param) {
       }
     }
   } else if (serv == 1) {
-    AAS_DoWork();
+    if(in_music)
+      AAS_DoWork();
     while(param--) VBlankIntrWait();
     return 0;
   } else if (serv == 2) {
-    irq_add(II_TIMER1, AAS_FastTimer1InterruptHandler);
-    AAS_MOD_Play(AAS_DATA_MOD_bla);
+    if (in_music) {
+      irq_add(II_TIMER1, AAS_FastTimer1InterruptHandler);
+      AAS_MOD_Play(AAS_DATA_MOD_bla);
+    }
     return 0;
   } else if ( serv == 3) {
     AAS_MOD_Stop();
-    int countdown = 10;
-    while(countdown--) {
+    /* int countdown = 10; */
+    /* while(countdown--) { */
+    /*   AAS_DoWork(); */
+    /*   VBlankIntrWait(); */
+    /* } */
+    // irq_delete(II_TIMER1);
+    return 0;
+  } else if (serv == 4) {
+    if(in_music)
       AAS_DoWork();
-      VBlankIntrWait();
-    }
-  } else if ( serv == 4) {
-    AAS_DoWork();
+    return 0;
+  } else if (serv == 5) {
+    // Initialise AAS
+    AAS_SetConfig(
+        AAS_CONFIG_MIX_32KHZ,
+        AAS_CONFIG_CHANS_8,
+        AAS_CONFIG_SPATIAL_STEREO,
+        AAS_CONFIG_DYNAMIC_OFF );
+    in_music = 1;
+    return 0;
   }
   return 0;
 }
