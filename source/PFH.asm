@@ -800,7 +800,7 @@ semicolon:
 #   '  ['] LIT ,XT  , ; IMMEDIATE
 # When encountered in a colon definition, the
 # phrase  ['] xxx  will cause   LIT,xxt  to be
-# compiled into the colon definition (where
+# compiled into the colon definition
 # (where xxt is the execution token of word xxx).
 # When the colon definition executes, xxt will
 # be put on the stack.  (All xt's are one cell.)
@@ -951,12 +951,28 @@ loop2:  .word exit
 #  >R 2DUP SWAP DUP R@ +     -- ... dst src src+n
 #  WITHIN IF  R> CMOVE>        src <= dst < src+n
 #       ELSE  R> CMOVE  THEN ;          otherwise
-    head move,4,"move",docolon,within
-        .word tor,twodup,swap,dup,rfetch,plus
-        .word within,qbranch,move1
-        .word rfrom,cmoveup,branch,move2
-move1:  .word rfrom,cmove
-move2:  .word exit
+
+#    head move,4,"move",docolon,within
+#        .word tor,twodup,swap,dup,rfetch,plus
+#        .word within,qbranch,move1
+#        .word rfrom,cmoveup,branch,move2
+#move1:  .word rfrom,cmove
+#move2:  .word exit
+
+#C MOVE    addr1 addr2 u --     assembly move
+    codeh move,4,"move",within
+	ldr	r4, [sp], #4	/* addr2 */
+	ldr	r5, [sp], #4	/* addr1 */
+    cmp r1, #0
+    ble move2
+move1:
+    ldr r6, [r5], #4
+	str	r6, [r4], #4
+    subs r1, r1, #4
+    bgt move1
+move2:
+	ldr	r1, [sp], #4	/* pop new TOS */
+	next
 
 #C DEPTH    -- +n        number of items on stack
 #   SP@ S0 SWAP - 2/ ;   16-BIT VERSION!
