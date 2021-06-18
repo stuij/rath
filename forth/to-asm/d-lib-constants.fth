@@ -243,6 +243,8 @@ mem-io 054 + constant reg-bldy
 001f constant bldy-mask
    0 constant bldy-shift
 
+: bldy-set ( val -- )
+  reg-bldy h! ;
 
 ( timer registers )
 mem-io 100 + constant reg-tm ( timers as tmr-rec array )
@@ -741,6 +743,31 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
     2drop
   then ;
 
+
+( effects )
+
+: fade-to-black ( shift -- )
+  bld-black bld-all 0 bld-set
+  dup 16 swap lshift 0 do
+    dup 1 swap lshift i swap mod not if
+      dup i swap rshift bldy-set else
+    then
+    vsync
+  loop
+  drop
+  1f bldy-set ;
+
+: fade-from-black ( shift -- )
+  bld-black bld-all 0 bld-set
+  dup 16 swap lshift 0 do
+    dup 1 swap lshift i swap mod not if
+      dup i swap rshift 1f swap - bldy-set else
+    then
+    vsync
+  loop
+  drop
+  0 bldy-set ;
+
 ( animation )
 
 : update-dir ( obj -- )
@@ -905,10 +932,6 @@ variable print-y-cur
   clear-dialog
   0 draw-txt-bg ;
 
-: test-str1 s" I am a little text, and I am awesome so you see." ;
-
-: test-str2 s" I will wrap around again and again, do you hear!" ;
-
 : str-print ( addr n -- )
   0 do
     dup
@@ -918,13 +941,6 @@ variable print-y-cur
 : set-transp-txt-bg ( -- )
   bld-std bld-bg1 bld-bg2 bld-set
   6 4 bldalpha-set ;
-
-: str-test
-  5 draw-txt-bg
-  test-str1 str-print
-  0d print-char
-  test-str2 str-print
-  print-dialog ;
 
 
 ( actions/things of interest )
@@ -941,7 +957,7 @@ variable print-y-cur
 9 constant sleep
 a constant closet
 
-: intro-str      s" \nIt's now 1509 days since\nlockdown. It's your life,\nhave fun.\n\n\nPress A to interact with\nthings and to exit dialogs.\n\n" ;
+: intro-str      s" \nIt's now 1509 days since\nlockdown. It's your life,\nhave fun.\n\n\nPress A to interact with\nthings and to exit dialogs.\n" ;
 : kitchen-str    s" Where is my green-blue\nspatula!" ;
 : sink-str       s" Pyjama's, you're my frend\ntill the end.." ;
 : toilet-str     s" You ascend your throne, whipout your GBA, and settle\ndown for another 3 hr\nsession of Crazy Taxi." ;
@@ -952,24 +968,66 @@ a constant closet
 : desk-str       s" should get ready for that\nZoom meeting with rubber\nducky in half an hour" ;
 : sleep-str      s" why not.." ;
 : closet-str     s" You open the closet door,\nsnuggle up in the left\ncorner and rock your body\nback and forth for a bit." ;
+: wake-str       s" You are now awake." ;
+
+
+: set-in-dialog ( -- )
+  ['] in-dialog continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
 
 : print-msg ( addr size dia-len -- )
   print-y-len !
   str-print
   5 draw-txt-bg
-  print-dialog
-  ['] in-dialog continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
+  print-dialog ;
 
 : print-dispatch ( addr size dia-len -- )
-  key-a key-hit if print-msg else 2drop drop then ;
+  key-a key-hit if print-msg set-in-dialog else 2drop drop then ;
+
+: wake-dialog
+  wake-str 2 print-msg set-in-dialog ;
+
+: sleep-seq ( xt x-coord y-coord -- )
+  dissolve-dialog
+  2 fade-to-black
+  beany obj-coord store-xy
+  beany dup down swap obj-dir!
+  dup update-coord
+  update-anim
+  vsync
+  update-vblank-hard
+  2 fade-from-black
+  set-transp-txt-bg
+  continuation ! ;
+
+: bed-seq
+  key-a key-hit if
+    ['] wake-dialog 18e 40 sleep-seq
+  then ;
+
+: sleep-dispatch ( addr size dia-len -- )
+  key-a key-hit if
+    print-msg
+    ['] bed-seq continuation !
+  else 2drop drop then ;
+
+: couch-seq
+  key-a key-hit if
+    ['] wake-dialog 110 3a couch-anim
+  then ;
+
+: couch-dispatch ( addr size dia-len -- )
+  key-a key-hit if
+    print-msg
+    ['] couch-seq continuation !
+  else 2drop drop then ;
 
 : dispatch-toi ( toi -- )
   dup 1 kitchen    lshift and if drop kitchen-str    2 print-dispatch else
-  dup 1 sleep      lshift and if drop sleep-str      1 print-dispatch else
+  dup 1 sleep      lshift and if drop sleep-str      1 sleep-dispatch else
   dup 1 sink       lshift and if drop sink-str       2 print-dispatch else
   dup 1 toilet     lshift and if drop toilet-str     4 print-dispatch else
   dup 1 bath       lshift and if drop bath-str       3 print-dispatch else
-  dup 1 couch      lshift and if drop couch-str      2 print-dispatch else
+  dup 1 couch      lshift and if drop couch-str      2 couch-dispatch else
   dup 1 tv         lshift and if drop tv-str         2 print-dispatch else
   dup 1 front-door lshift and if drop front-door-str 1 print-dispatch else
   dup 1 desk       lshift and if drop desk-str       3 print-dispatch else
@@ -1000,12 +1058,16 @@ a constant closet
   then ;
 
 : intro ( -- )
- intro-str a print-msg ;
+  vsync
+  2 fade-from-black
+  vsync
+  set-transp-txt-bg
+  intro-str 9 print-msg
+  set-in-dialog ;
 
 ( update things that are less time-sensitive )
 : update-loose ( -- )
   continuation @ execute
-  ( some things we will update unconditionally )
 ;
 
 : update-world
@@ -1016,15 +1078,13 @@ a constant closet
 ( game loop )
 
 : gloop ( -- )
-  start-music
   begin
     key-poll
     update-world
     ( music buffer stuffing happens in C before vsync irq call )
     vsync
     select key-hit
-  until
-  stop-music ;
+  until ;
 
 
 ( initialization )
@@ -1034,15 +1094,13 @@ a constant closet
   font-tiles font-tiles-base @ font-len move
   1d sbb-offs font-map-base !
   1c sbb-offs font-bg-map-base !
-  set-dialog-dimensions
-  set-transp-txt-bg
-  ( str-test ) ;
+  set-dialog-dimensions ;
 
 
 : beany-init ( -- )
   1 mov-delta !
   78 beany-equ-offs-x !
-  40 beany-equ-offs-y !
+  3a beany-equ-offs-y !
 
   beany
   dup set-spr-cb-16x32
@@ -1060,6 +1118,9 @@ a constant closet
   attr0-tall beany-equ-offs-y @ or beany @ attr0!
   beany-equ-offs-x @ attr1-size-16x32 or beany @ attr1! ;
 
+: set-to-black ( -- )
+  bld-black bld-all 0 bld-set
+  1f bldy-set ;
 
 : apt-graphics-mode-init ( -- )
   ( set up dispcnt and bg control regs for apartment scene )
@@ -1089,38 +1150,41 @@ a constant closet
   apt-map 1e sbb-offs apt-map-len move ;
 
 
+
 ( init all )
-: apt-init ( -- )
+: apt ( -- )
   key-init
   beany-init
-  apt-bg-init
   font-init
+  apt-bg-init
   ['] in-default continuation !
-  ( init-music )
   update-world
   apt-graphics-mode-init
-  ['] intro continuation !
+  ( ['] intro continuation ! ) ( uncomment for intro )
   gloop ;
 
-: splash-init
+: splash-screen-init
   splash 0 cbb-offs splash-len move
   dcnt-mode3 dcnt-bg2 or reg-dispcnt set-reg ;
 
-: splash-loop
-  start-music
+: splash-loop ( -- )
   begin
     vsync
     key-poll
     key-a key-hit
-  until
-  stop-music ;
+  until ;
+
+: splash-init ( -- )
+  splash-screen-init
+  splash-loop
+  1 fade-to-black
+  1c sbb-offs sbb-size 2 * 0 wfill ;
 
 : init
-  splash-init
   init-music
-  splash-loop
-  1c sbb-offs sbb-size 2 * 0 fill
-  apt-init ;
+  start-music
+  ( splash-init ) ( uncomment for intro )
+  apt ;
 
 ( implement this at some point: commercial rom WAITCNT settings )
 ( REG_WAITCNT = 0x4317 )
