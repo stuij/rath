@@ -811,6 +811,8 @@ variable continuation
 ( beany == player character sprite )
 obj-size array beany
 
+variable covid-time
+
 ( text )
 
 variable font-tiles-base
@@ -938,6 +940,9 @@ variable print-y-cur
     i + c@ print-char
   loop drop ;
 
+: nr-to-str ( u -- addr n )
+  0 <# #s #> ;
+
 : set-transp-txt-bg ( -- )
   bld-std bld-bg1 bld-bg2 bld-set
   6 4 bldalpha-set ;
@@ -957,19 +962,24 @@ variable print-y-cur
 9 constant sleep
 a constant closet
 
-: intro-str      s" \nIt's now 1509 days since\nlockdown. It's your life,\nhave fun.\n\n\nPress A to interact with\nthings and to exit dialogs.\n" ;
-: kitchen-str    s" Where is my green-blue\nspatula!" ;
-: sink-str       s" Pyjama's, you're my frend\ntill the end.." ;
-: toilet-str     s" You ascend your throne, whipout your GBA, and settle\ndown for another 3 hr\nsession of Crazy Taxi." ;
-: bath-str       s" The bath just reminds you ofthat day rubber ducky went\nout to get a pack of smokes." ;
-: couch-str      s" Shall I nap on you now, or \nwait for 15 minutes??" ;
-: tv-str         s" ... 12 years of lock-down.. is it TOO much??? ..." ;
-: front-door-str s" You shall not pass!!" ;
-: desk-str       s" should get ready for that\nZoom meeting with rubber\nducky in half an hour" ;
-: sleep-str      s" why not.." ;
-: closet-str     s" You open the closet door,\nsnuggle up in the left\ncorner and rock your body\nback and forth for a bit." ;
-: wake-str       s" You are now awake." ;
+: intro-str1       s" \nIt's now " ;
+: intro-str2       s" days since\nlockdown. It's your life,\nhave fun.\n\n\nPress A to interact with\nthings and to exit dialogs.\n" ;
 
+: couch-start-str  s" I'll just take a tiny nap. \nJust 15 minutes max!" ;
+: couch-wake1-str  s" You wake up with a faint headache. You don't know what time it is exactly, but it's the next day. It's now day " ;
+: couch-wake2-str  s" of Covid lockdown. And there's no end in sight." ;
+
+: bed-start-str    s" why not.." ;
+: bed-wake1-str    s" You just slept through another night, feeling guilty you seemingly didn't do anything yesterday. Today is day " ;
+: bed-wake2-str    s" of Covid lockdown, and it's almost time for lunch. sigh..." ;
+: kitchen-str      s" Where is my green-blue\nspatula!" ;
+: sink-str         s" Pyjama's, you're my frend\ntill the end.." ;
+: toilet-str       s" You ascend your throne, whipout your GBA, and settle\ndown for another 3 hr\nsession of Crazy Taxi." ;
+: bath-str         s" The bath just reminds you ofthat day rubber ducky went\nout to get a pack of smokes." ;
+: tv-str           s" ... 12 years of lock-down.. is it TOO much??? ..." ;
+: front-door-str   s" You shall not pass!!" ;
+: desk-str         s" should get ready for that\nZoom meeting with rubber\nducky in half an hour" ;
+: closet-str       s" You open the closet door,\nsnuggle up in the left\ncorner and rock your body\nback and forth for a bit." ;
 
 : set-in-dialog ( -- )
   ['] in-dialog continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
@@ -983,8 +993,17 @@ a constant closet
 : print-dispatch ( addr size dia-len -- )
   key-a key-hit if print-msg set-in-dialog else 2drop drop then ;
 
-: wake-dialog
-  wake-str 2 print-msg set-in-dialog ;
+: print-covid-time ( -- )
+  covid-time @ nr-to-str str-print
+  bl print-char ;
+
+: print-covid-msg ( addr-msg2 n-msg2 addr-msg1 n-msg1 y-len -- )
+  print-y-len !
+  str-print
+  print-covid-time
+  str-print
+  5 draw-txt-bg
+  print-dialog ;
 
 : sleep-seq ( xt x-coord y-coord -- )
   dissolve-dialog
@@ -995,24 +1014,33 @@ a constant closet
   update-anim
   vsync
   update-vblank-hard
+  covid-time dup @ 1+ swap !
   2 fade-from-black
   set-transp-txt-bg
   continuation ! ;
 
-: bed-seq
+( bed dialog )
+: bed-wake-dialog ( -- )
+  bed-wake2-str bed-wake1-str 8 print-covid-msg set-in-dialog ;
+
+: bed-seq ( -- )
   key-a key-hit if
-    ['] wake-dialog 18e 40 sleep-seq
+    ['] bed-wake-dialog 18e 40 sleep-seq
   then ;
 
-: sleep-dispatch ( addr size dia-len -- )
+: bed-dispatch ( addr size dia-len -- )
   key-a key-hit if
     print-msg
     ['] bed-seq continuation !
   else 2drop drop then ;
 
-: couch-seq
+( couch dialog )
+: couch-wake-dialog ( -- )
+  couch-wake2-str couch-wake1-str 6 print-covid-msg set-in-dialog ;
+
+: couch-seq ( -- )
   key-a key-hit if
-    ['] wake-dialog 110 3a couch-anim
+    ['] couch-wake-dialog 110 3a sleep-seq
   then ;
 
 : couch-dispatch ( addr size dia-len -- )
@@ -1022,16 +1050,16 @@ a constant closet
   else 2drop drop then ;
 
 : dispatch-toi ( toi -- )
-  dup 1 kitchen    lshift and if drop kitchen-str    2 print-dispatch else
-  dup 1 sleep      lshift and if drop sleep-str      1 sleep-dispatch else
-  dup 1 sink       lshift and if drop sink-str       2 print-dispatch else
-  dup 1 toilet     lshift and if drop toilet-str     4 print-dispatch else
-  dup 1 bath       lshift and if drop bath-str       3 print-dispatch else
-  dup 1 couch      lshift and if drop couch-str      2 couch-dispatch else
-  dup 1 tv         lshift and if drop tv-str         2 print-dispatch else
-  dup 1 front-door lshift and if drop front-door-str 1 print-dispatch else
-  dup 1 desk       lshift and if drop desk-str       3 print-dispatch else
-  dup 1 closet     lshift and if drop closet-str     4 print-dispatch else
+  dup 1 kitchen    lshift and if drop kitchen-str     2 print-dispatch else
+  dup 1 sleep      lshift and if drop bed-start-str   1 bed-dispatch   else
+  dup 1 sink       lshift and if drop sink-str        2 print-dispatch else
+  dup 1 toilet     lshift and if drop toilet-str      4 print-dispatch else
+  dup 1 bath       lshift and if drop bath-str        3 print-dispatch else
+  dup 1 couch      lshift and if drop couch-start-str 2 couch-dispatch else
+  dup 1 tv         lshift and if drop tv-str          2 print-dispatch else
+  dup 1 front-door lshift and if drop front-door-str  1 print-dispatch else
+  dup 1 desk       lshift and if drop desk-str        3 print-dispatch else
+  dup 1 closet     lshift and if drop closet-str      4 print-dispatch else
   drop then then then then then then then then then then
 ;
 
@@ -1062,7 +1090,7 @@ a constant closet
   2 fade-from-black
   vsync
   set-transp-txt-bg
-  intro-str 9 print-msg
+  intro-str2 intro-str1 9 print-covid-msg
   set-in-dialog ;
 
 ( update things that are less time-sensitive )
@@ -1157,10 +1185,11 @@ a constant closet
   beany-init
   font-init
   apt-bg-init
+  2332 covid-time !
   ['] in-default continuation !
   update-world
   apt-graphics-mode-init
-  ( ['] intro continuation ! ) ( uncomment for intro )
+  ['] intro continuation ! ( uncomment for intro )
   gloop ;
 
 : splash-screen-init
@@ -1183,7 +1212,7 @@ a constant closet
 : init
   init-music
   start-music
-  ( splash-init ) ( uncomment for intro )
+  splash-init ( uncomment for intro )
   apt ;
 
 ( implement this at some point: commercial rom WAITCNT settings )
