@@ -431,6 +431,13 @@ variable spr-deallocs
 : spr-tid! ( tid spr -- )
   dup attr2@ attr2-id-mask invert and rot attr2-id-mask and or swap attr2! ;
 
+: spr-hflip! ( flip-bool spr )
+  swap if
+    dup attr1@ attr1-hflip or swap attr1! ( set hflip )
+  else
+    dup attr1@ attr1-hflip invert and swap attr1! ( clear hflip )
+  then ;
+
 : spr-z@ 7 + c@ ; ( spr - z-depth )
 : spr-z! 7 + c! ; ( spr - z-depth )
 
@@ -598,8 +605,10 @@ variable key-prev
 : obj-cb-height 5 cells + ; ( obj -- height-addr )
 : obj-tid-base@ 6 cells + @ ; ( obj -- tile-id-base )
 : obj-tid-base! 6 cells + ! ; ( tile-id-base obj -- )
-: obj-frame@ 6 cells + h@ ; ( obj -- frame )
-: obj-frame! 6 cells + h! ; ( frame obj -- )
+: obj-ticks@ 1e + h@ ; ( obj -- ticks )
+: obj-ticks! 1e + h! ; ( ticks obj -- )
+: obj-idle@ 8 cells + h@ ; ( obj -- idle )
+: obj-idle! 8 cells + h! ; ( idle obj -- )
 
 : set-spr-cb-8x16 ( obj --  )
   dup obj-cb-offs 0 1 rot store-xy
@@ -611,7 +620,7 @@ variable key-prev
   dup obj-cb-width 2 swap !
   obj-cb-height 2 swap ! ;
 
-1a constant obj-size
+22 constant obj-size
 
 
 ( coordinate mapping, collision detection, things of interest )
@@ -770,32 +779,90 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 
 ( animation )
 
+: obj-ticks-inc ( obj -- )
+  dup obj-ticks@ 1+ swap obj-ticks! ;
+
+: new-obj-dir ( dir obj )
+  dup 0 swap obj-ticks!
+  dup 0 swap obj-idle!
+  obj-dir! ;
+
 : update-dir ( obj -- )
-  key-dir key-transit if ( only update if there are actually any key-press changes 
+  key-dir key-transit
+  if ( only update if there are actually any key-press changes 
     ( if we point to same direction as before we don't change direction, )
     ( so we face the same side when transitioning to/from diagonals. )
     ( we only support 4 directions for now )
-    dup obj-dir@ key-is-down if drop
+    ( just update ticks )
+    dup obj-dir@ key-is-down
+    if
+      dup obj-idle@ if
+        dup 0 swap obj-ticks!
+        0 swap obj-idle!
+      else
+        obj-ticks-inc
+      then
     else
       ( else point to direction in preset order of preference )
-      left  key-is-down if left  swap obj-dir! else
-      right key-is-down if right swap obj-dir! else
-      up    key-is-down if up    swap obj-dir! else
-      down  key-is-down if down  swap obj-dir! else
-      drop then then then then
+      left  key-is-down if left  swap new-obj-dir else
+      right key-is-down if right swap new-obj-dir else
+      up    key-is-down if up    swap new-obj-dir else
+      down  key-is-down if down  swap new-obj-dir else
+      ( no key has been pressed. we're idle and we weren't before. )
+      dup 0 swap obj-ticks!
+      1 swap obj-idle!
+      then then then then
     then
-  else drop then ;
+  else
+    obj-ticks-inc
+  then ;
 
-: set-obj-tid ( tid-offs obj )
+: obj-set-spr-tid ( tid-offs obj )
   tuck obj-tid-base@ +
   swap obj-spr@ spr-tid! ;
 
+( 16x32 sprite sheet layout: )
+( tiles per sprite: 8 )
+( animations:
+( walking: 3 per direction, 4 per loop: left-leg rest1 right-leg rest1 )
+( standing: let's start off with 2 frames, per direction )
+( so that's 4 frames in total, packed like: left-leg, right-leg, rest1, rest2 )
+( directions packing: down, up, left.. right is left mirrored )
+
+8 constant tiles-per-sprite
+4 constant frames-per-dir
+tiles-per-sprite frames-per-dir * constant tot-dir-tiles
+
+4 constant tick-shift-move ( remove-bottom 32 tick ranges )
+6 constant tick-shift-idle ( remove-bottom 32 tick ranges )
+
+: tid-offs ( obj -- tid-offs ) ( general tid offset into direction )
+  dup obj-ticks@ swap obj-idle@ if
+    ( tick-shift rshifts: strobing 32 ticks ~= on-off every half second )
+    ( the addition of 2 will mean that a val of 0 will be rest1 and a val of 1 )
+    ( will match rest2 )
+    tick-shift-idle rshift 1 and 2 +
+  else
+    tick-shift-move rshift 3 and ( here we're cutting our range into 4 regions )
+    dup 0 = if drop 0 else ( left-leg, we're done. we're already at pos 0 )
+    dup 1 = if drop 2 else ( rest1 )
+    dup 2 = if drop 1 else ( right-leg )
+    dup 3 = if drop 2 else ( rest1 )
+    drop ( shouldn't happen ) then then then then
+  then
+  tiles-per-sprite * ; ( multiply by tiles per sprite )
+
+: spr-dir-left-right! ( mirror? obj )
+  dup
+  dup tid-offs tot-dir-tiles 2 * + swap obj-set-spr-tid ( set spr tid )
+  obj-spr@ spr-hflip! ; ( set spr mirror )
+
 : spr-dir! ( obj )
   dup obj-dir@
-  dup down  = if drop 0  swap set-obj-tid else
-  dup up    = if drop 8  swap set-obj-tid else
-  dup left  = if drop 10 swap set-obj-tid else
-  dup right = if drop 18 swap set-obj-tid else
+  dup down  = if drop dup tid-offs swap obj-set-spr-tid else
+  dup up    = if drop dup tid-offs tot-dir-tiles + swap obj-set-spr-tid else
+  dup left  = if drop 0 swap spr-dir-left-right! else
+  dup right = if drop 1 swap spr-dir-left-right! else
   2drop then then then then ;
 
 : update-spr-frame ( obj -- )
@@ -1099,8 +1166,8 @@ a constant closet
 ;
 
 : update-world
-    update-vblank-hard
-    update-loose ;
+  update-vblank-hard
+  update-loose ;
 
 
 ( game loop )
@@ -1132,12 +1199,13 @@ a constant closet
 
   beany
   dup set-spr-cb-16x32
-  dup 0 swap obj-frame!
+  dup 0 swap obj-ticks!
+  dup 1 swap obj-idle!
   dup down swap obj-dir!
   dup 0 swap obj-tid-base! ( so basically mem-vram-obj )
   obj-coord 90 60 rot store-xy
 
-  snaggle-tiles mem-vram-obj 400 move
+  snaggle-tiles mem-vram-obj c00 move
   snaggle-pal mem-pal-obj 200 move
 
   init-spr-list
@@ -1189,7 +1257,7 @@ a constant closet
   ['] in-default continuation !
   update-world
   apt-graphics-mode-init
-  ['] intro continuation ! ( uncomment for intro )
+  ( ['] intro continuation ! ) ( uncomment for intro )
   gloop ;
 
 : splash-screen-init
@@ -1210,9 +1278,9 @@ a constant closet
   1c sbb-offs sbb-size 2 * 0 wfill ;
 
 : init
-  init-music
-  start-music
-  splash-init ( uncomment for intro )
+  ( init-music )
+  ( start-music )
+  ( splash-init ) ( uncomment for intro )
   apt ;
 
 ( implement this at some point: commercial rom WAITCNT settings )
