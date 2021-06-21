@@ -701,8 +701,8 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 : update-shadow-bg-y bg-coord y! ; ( bg-y-coord -- )
 : update-shadow-bg-coord dup x-get update-shadow-bg-x y-get update-shadow-bg-y ; ( coord )
 
-: update-bg-x bg-coord x@ reg-bg2hofs h! ; ( -- )
-: update-bg-y bg-coord y@ reg-bg2vofs h! ; ( -- )
+: update-bg-x bg-coord x@ reg-bg3hofs h! ; ( -- )
+: update-bg-y bg-coord y@ reg-bg3vofs h! ; ( -- )
 : update-bg-coord update-bg-x update-bg-y ; ( -- )
 
 : clamp-bg-min dup 0 < if drop 0 then ; ( x-or-y-bg-coord )
@@ -789,7 +789,7 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 
 : update-dir ( obj -- )
   key-dir key-transit
-  if ( only update if there are actually any key-press changes 
+  if ( only update if there are actually any key-press changes )
     ( if we point to same direction as before we don't change direction, )
     ( so we face the same side when transitioning to/from diagonals. )
     ( we only support 4 directions for now )
@@ -873,12 +873,14 @@ tiles-per-sprite frames-per-dir * constant tot-dir-tiles
 ( higher logic general )
 
 ( continuation of game logic )
-variable continuation
+variable main-loop-continuation
+variable timed-event-continuation
 
 ( beany == player character sprite )
 obj-size array beany
 
-variable covid-time
+variable covid-date
+variable timed-event-counter
 
 ( text )
 
@@ -1001,6 +1003,15 @@ variable print-y-cur
   clear-dialog
   0 draw-txt-bg ;
 
+: exit-dialog ( -- )
+   dissolve-dialog
+   ['] in-default main-loop-continuation ! ;
+
+: in-dialog ( -- )
+  key-a key-hit if
+    exit-dialog
+  then ;
+
 : str-print ( addr n -- )
   0 do
     dup
@@ -1011,7 +1022,7 @@ variable print-y-cur
   0 <# #s #> ;
 
 : set-transp-txt-bg ( -- )
-  bld-std bld-bg1 bld-bg2 bld-set
+  bld-std bld-bg1 bld-bg2 bld-bg3 or bld-set
   6 4 bldalpha-set ;
 
 
@@ -1048,8 +1059,10 @@ a constant closet
 : desk-str         s" should get ready for that\nZoom meeting with rubber\nducky in half an hour" ;
 : closet-str       s" You open the closet door,\nsnuggle up in the left\ncorner and rock your body\nback and forth for a bit." ;
 
+: friend-call-init-str s" RING RING!!!\nRING RING!!!\n\nRING RING!!!\nRING RING!!!" ;
+
 : set-in-dialog ( -- )
-  ['] in-dialog continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
+  ['] in-dialog main-loop-continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
 
 : print-msg ( addr size dia-len -- )
   print-y-len !
@@ -1060,14 +1073,14 @@ a constant closet
 : print-dispatch ( addr size dia-len -- )
   key-a key-hit if print-msg set-in-dialog else 2drop drop then ;
 
-: print-covid-time ( -- )
-  covid-time @ nr-to-str str-print
+: print-covid-date ( -- )
+  covid-date @ nr-to-str str-print
   bl print-char ;
 
 : print-covid-msg ( addr-msg2 n-msg2 addr-msg1 n-msg1 y-len -- )
   print-y-len !
   str-print
-  print-covid-time
+  print-covid-date
   str-print
   5 draw-txt-bg
   print-dialog ;
@@ -1081,10 +1094,10 @@ a constant closet
   update-anim
   vsync
   update-vblank-hard
-  covid-time dup @ 1+ swap !
+  covid-date mem-1+
   2 fade-from-black
   set-transp-txt-bg
-  continuation ! ;
+  main-loop-continuation ! ;
 
 ( bed dialog )
 : bed-wake-dialog ( -- )
@@ -1098,7 +1111,7 @@ a constant closet
 : bed-dispatch ( addr size dia-len -- )
   key-a key-hit if
     print-msg
-    ['] bed-seq continuation !
+    ['] bed-seq main-loop-continuation !
   else 2drop drop then ;
 
 ( couch dialog )
@@ -1113,7 +1126,7 @@ a constant closet
 : couch-dispatch ( addr size dia-len -- )
   key-a key-hit if
     print-msg
-    ['] couch-seq continuation !
+    ['] couch-seq main-loop-continuation !
   else 2drop drop then ;
 
 : dispatch-toi ( toi -- )
@@ -1127,8 +1140,58 @@ a constant closet
   dup 1 front-door lshift and if drop front-door-str  1 print-dispatch else
   dup 1 desk       lshift and if drop desk-str        3 print-dispatch else
   dup 1 closet     lshift and if drop closet-str      4 print-dispatch else
-  drop then then then then then then then then then then
-;
+  drop then then then then then then then then then then ;
+
+
+( timed events )
+
+: timed-events-end ( -- )
+  ( this should hold some dramatic end sequence, nop for now ) ;
+
+: timed-dialog-seq ( addr n size cont -- )
+  key-a key-hit if
+    dissolve-dialog
+    print-msg
+    timed-event-continuation !
+  else 2drop 2drop
+  then ;
+
+( friend sequence )
+
+: friend-hang-up ( -- )
+  key-a key-hit if
+    reg-dispcnt dup @ dcnt-bg2 invert and swap ! ( remove bg phone )
+    dissolve-dialog
+    ['] timed-events-end timed-event-continuation !
+  then ;
+
+: friend-reply ( -- )
+  ['] friend-hang-up
+  s" you: uh, yea, mebby.." 2
+  timed-dialog-seq ;
+
+: friend-intro ( -- )
+  ['] friend-reply
+  s" friend: Hey, so d'ya hear, lockdown is over in a couple of days. Wanna hang out in the park?" 4
+  timed-dialog-seq ;
+
+: friend-pick-up ( -- )
+  ['] friend-intro
+  s" you: y'hullo?" 1
+  timed-dialog-seq ;
+
+: friend-call ( -- )
+  timed-event-counter @ 500 > if
+    reg-dispcnt dup @ dcnt-bg2 or swap ! ( add bg phone )
+    friend-call-init-str 5 print-msg
+    ['] friend-pick-up timed-event-continuation !
+  then ;
+
+: timed-events
+  timed-event-continuation @ execute ;
+
+
+( high-level update functions )
 
 : update-anim ( obj -- )
   update-spr-frame ;
@@ -1142,27 +1205,27 @@ a constant closet
   beany obj-toi@ dispatch-toi ;
 
 : in-default ( -- )
+  timed-events
   beany dup update-coord
   update-actions
   update-anim ;
-
-: in-dialog ( -- )
-  key-a key-hit if
-    dissolve-dialog
-    ['] in-default continuation !
-  then ;
 
 : intro ( -- )
   vsync
   2 fade-from-black
   vsync
+
   set-transp-txt-bg
   intro-str2 intro-str1 9 print-covid-msg
   set-in-dialog ;
 
+: mem-1+ ( addr )
+  dup @ 1+ swap ! ;
+
 ( update things that are less time-sensitive )
 : update-loose ( -- )
-  continuation @ execute
+  timed-event-counter mem-1+
+  main-loop-continuation @ execute
 ;
 
 : update-world
@@ -1185,12 +1248,16 @@ a constant closet
 ( initialization )
 
 : font-init
-  2  cbb-offs font-tiles-base !
+  2 cbb-offs font-tiles-base !
   font-tiles font-tiles-base @ font-len move
   1d sbb-offs font-map-base !
   1c sbb-offs font-bg-map-base !
   set-dialog-dimensions ;
 
+: phone-init
+  ( palette is shared with apt palette, automatically cause of setup )
+  phone-tiles 1 cbb-offs phone-len move
+  phone-map 1b sbb-offs phone-map-len move ;
 
 : beany-init ( -- )
   1 mov-delta !
@@ -1223,13 +1290,14 @@ a constant closet
   dcnt-obj dcnt-obj-1d or dcnt-mode0 or
   dcnt-bg0 or
   dcnt-bg1 or
-  dcnt-bg2 or
-  ( dcnt-bg3 or )
+  ( dcnt-bg2 or )
+  dcnt-bg3 or
   reg-dispcnt set-reg
+
   2 bg-cbb 1d bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg0cnt set-reg ( txt )
   0 bg-cbb 1c bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg1cnt set-reg ( txt bg )
-  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg2cnt set-reg ( apt )
-  ( 2 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg3cnt set-reg ) ( weird ) ;
+  1 bg-cbb 1b bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg2cnt set-reg ( phone )
+  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg3cnt set-reg ( apt ) ;
 
 
 : apt-bg-init ( -- )
@@ -1245,19 +1313,23 @@ a constant closet
   apt-pal mem-pal-bg apt-pal-len move
   apt-map 1e sbb-offs apt-map-len move ;
 
-
+: timed-event-init
+  0 timed-event-counter !
+  ['] friend-call timed-event-continuation ! ;
 
 ( init all )
 : apt ( -- )
   key-init
   beany-init
   font-init
+  phone-init
   apt-bg-init
-  2332 covid-time !
-  ['] in-default continuation !
+  timed-event-init
+  2332 covid-date !
+  ['] in-default main-loop-continuation !
   update-world
   apt-graphics-mode-init
-  ( ['] intro continuation ! ) ( uncomment for intro )
+  ['] intro main-loop-continuation ! ( uncomment for intro )
   gloop ;
 
 : splash-screen-init
@@ -1278,9 +1350,9 @@ a constant closet
   1c sbb-offs sbb-size 2 * 0 wfill ;
 
 : init
-  ( init-music )
-  ( start-music )
-  ( splash-init ) ( uncomment for intro )
+  init-music
+  start-music
+  splash-init ( uncomment for intro )
   apt ;
 
 ( implement this at some point: commercial rom WAITCNT settings )

@@ -864,7 +864,7 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
   .word 1408
 
     head apt_pal,7,"apt-pal",dovar,apt_tiles_len
-.incbin "apartment-map.pal.bin"
+.incbin "shared.pal.bin"
 .align
     head apt_pal_len,11,"apt-pal-len",docon,apt_pal
   .word 512
@@ -875,7 +875,19 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
     head apt_map_len,11,"apt-map-len",docon,apt_map
   .word 4096
 
-    head font_tiles,10,"font-tiles",docon,apt_map_len
+    head phone_tiles,11,"phone-tiles",dovar,apt_map_len
+.incbin "phone.img.bin"
+.align
+    head phone_len,9,"phone-len",docon,phone_tiles
+  .word 8384
+
+    head phone_map,9,"phone-map",dovar,phone_len
+.incbin "phone.map.bin"
+.align
+    head phone_map_len,13,"phone-map-len",docon,phone_map
+  .word 2048
+
+    head font_tiles,10,"font-tiles",docon,phone_map_len
   .word gba_font
   .align
     head font_len,10,"font-len",docon,font_tiles

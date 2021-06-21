@@ -168,7 +168,8 @@ ass:
 	$(FCOMP) $(RATH_HOME)/forth/to-asm/d-lib-constants.fth -o ass.asm
 	$(TILED2BIN) $(ASSETS)/apartment-map.json -o apt-toi.bin # things of interest
 	convert $(ASSETS)/apartment-map.png apartment-map.png
-	grit apartment-map.png -ftb -mR8 -mLs
+	convert $(ASSETS)/phone.png phone.png
+	grit apartment-map.png phone.png -ftb -mR8 -mLs -pS -O shared
 	grit $(ASSETS)/snaggle.png -ftb -gB4 -gT 000000 -Mw 2 -Mh 4
 
 #---------------------------------------------------------------------------------
