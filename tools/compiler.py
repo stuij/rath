@@ -493,6 +493,10 @@ name_ass_table = {
     'r>':    'rfrom',
     '1+':    'oneplus',
     '1-':    'oneminus',
+    "[']":   'lit', # nice and hacky. this should just work as we don't really do compile time things (because of this weak-ass compiler).
+    '<#': 'lessnum',
+    '#s': 'nums',
+    '#>': 'numgreater',
 }
 
 def try_ass_sub(name):
