@@ -391,7 +391,7 @@ key2:   .word savekey,cfetch,lit,0,savekey,cstore
 	movne	r4, r4, lsl #8
 	andne	r6, r6, #0x00ff
 	orr	r6, r6, r4
-	strh	r6, [r1]	/* store the updated halfowrd */
+	strh	r6, [r1]	/* store the updated halfword */
 	ldr	r1, [sp], #4	/* pop new TOS */
 	next
 
@@ -737,9 +737,23 @@ filbeg:	.word twodup,xor
 	.word branch,filbeg
 filrep:	.word rfrom,drop,twodrop,exit
 
+#z WFILL   addr u w --  fill memory with word
+    codeh wfill,5,"wfill",fill
+	ldr	r5, [sp], #4	/* u */
+	ldr	r4, [sp], #4	/* addr */
+    cmp r5, #0
+    ble wfill2
+wfill1:
+	str	r1, [r4], #4
+    subs r5, r5, #4
+    bgt wfill1
+wfill2:
+	ldr	r1, [sp], #4	/* pop new TOS */
+	next
+
 #Z WMOVE   a-addr1 a-addr2 u --  move word steps from bottom
 # hi-level version
-    head wmove,5,"wmove",docolon,fill
+    head wmove,5,"wmove",docolon,wfill
 	.word over,plus,tor	/* a-addr1 a-addr2   R: a-addr2+u */
 wmbeg:	.word dup,rfetch,xor
 	.word qbranch,wmrep
