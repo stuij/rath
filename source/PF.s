@@ -866,7 +866,7 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 .align
 
     head splash,6,"splash",dovar,snaggle_pal
-.incbin "../assets/ass.img.bin"
+.incbin "splash.img.bin"
 .align
     head splash_len,10,"splash-len",docon,splash
   .word 76800
