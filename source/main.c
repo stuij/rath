@@ -17,7 +17,7 @@ u8 user_area[256];
 // This stack is used by Forth and C, so it needs to be large enough
 // I could have made these two stacks distinct...
 u8 ps_area[1024];
-u8 rs_area[256];
+u8 rs_area[512];
 u8 holdpad_area[40+88];
 
 // Memory Map Information needed by PandaForth
