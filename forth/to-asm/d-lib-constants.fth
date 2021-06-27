@@ -1067,7 +1067,7 @@ a constant closet
 : print-msg ( addr size dia-len -- )
   print-y-len !
   str-print
-  5 draw-txt-bg
+  8 draw-txt-bg
   print-dialog ;
 
 : print-dispatch ( addr size dia-len -- )
@@ -1082,7 +1082,7 @@ a constant closet
   str-print
   print-covid-date
   str-print
-  5 draw-txt-bg
+  8 draw-txt-bg
   print-dialog ;
 
 : sleep-seq ( xt x-coord y-coord -- )
@@ -1152,7 +1152,7 @@ a constant closet
   key-a key-hit if
     dissolve-dialog
     print-msg
-    timed-event-continuation !
+    main-loop-continuation !
   else 2drop 2drop
   then ;
 
@@ -1162,7 +1162,7 @@ a constant closet
   key-a key-hit if
     reg-dispcnt dup @ dcnt-bg2 invert and swap ! ( remove bg phone )
     dissolve-dialog
-    ['] timed-events-end timed-event-continuation !
+    ['] in-default main-loop-continuation !
   then ;
 
 : friend-reply ( -- )
@@ -1184,7 +1184,8 @@ a constant closet
   timed-event-counter @ 500 > if
     reg-dispcnt dup @ dcnt-bg2 or swap ! ( add bg phone )
     friend-call-init-str 5 print-msg
-    ['] friend-pick-up timed-event-continuation !
+    ['] friend-pick-up main-loop-continuation !
+    ['] timed-events-end timed-event-continuation !
   then ;
 
 : timed-events
@@ -1295,7 +1296,7 @@ a constant closet
   reg-dispcnt set-reg
 
   2 bg-cbb 1d bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg0cnt set-reg ( txt )
-  0 bg-cbb 1c bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg1cnt set-reg ( txt bg )
+  0 bg-cbb 1c bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg1cnt set-reg ( txt bg )
   1 bg-cbb 1b bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg2cnt set-reg ( phone )
   0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg3cnt set-reg ( apt ) ;
 
