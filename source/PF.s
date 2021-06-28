@@ -875,7 +875,7 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
 .incbin "apartment-map.img.bin"
 .align
     head apt_tiles_len,13,"apt-tiles-len",docon,apt_tiles
-  .word 1408
+  .word 15680
 
     head apt_pal,7,"apt-pal",dovar,apt_tiles_len
 .incbin "shared.pal.bin"

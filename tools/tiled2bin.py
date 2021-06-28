@@ -22,6 +22,10 @@ toi_map = {
     "desk": 8,
     "bed": 9,
     "closet": 10,
+    "clothes": 11,
+    "gamecube": 12,
+    "fridge": 13,
+    "poster": 14,
 }
 
 def to_json(file):

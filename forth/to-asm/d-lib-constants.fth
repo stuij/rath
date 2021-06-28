@@ -1039,6 +1039,10 @@ variable print-y-cur
 8 constant desk
 9 constant sleep
 a constant closet
+b constant clothes
+c constant gamecube
+d constant fridge
+e constant poster
 
 : intro-str1       s" \nIt's now " ;
 : intro-str2       s" days since\nlockdown. It's your life,\nhave fun.\n\n\nPress A to interact with\nthings and to exit dialogs.\n" ;
@@ -1058,6 +1062,10 @@ a constant closet
 : front-door-str   s" You shall not pass!!" ;
 : desk-str         s" should get ready for that\nZoom meeting with rubber\nducky in half an hour" ;
 : closet-str       s" You open the closet door,\nsnuggle up in the left\ncorner and rock your body\nback and forth for a bit." ;
+: clothes-str      s" Yup, some dirty clothes on the floor." ;
+: gamecube-str     s" A gamecube.." ;
+: fridge-str       s" You open the fridge. It is stacked from top to bottom with crisps.. Weird!" ;
+: poster-str       s" It's a poster of some art-house movie." ;
 
 : friend-call-init-str s" RING RING!!!\nRING RING!!!\n\nRING RING!!!\nRING RING!!!" ;
 
@@ -1140,10 +1148,11 @@ a constant closet
   dup 1 front-door lshift and if drop front-door-str  1 print-dispatch else
   dup 1 desk       lshift and if drop desk-str        3 print-dispatch else
   dup 1 closet     lshift and if drop closet-str      4 print-dispatch else
-  drop then then then then then then then then then then ;
-
-
-( timed events )
+  dup 1 clothes    lshift and if drop clothes-str     2 print-dispatch else
+  dup 1 gamecube   lshift and if drop gamecube-str    1 print-dispatch else
+  dup 1 fridge     lshift and if drop fridge-str      4 print-dispatch else
+  dup 1 poster     lshift and if drop poster-str      2 print-dispatch else
+  drop then then then then then then then then then then then then then then ;
 
 : timed-events-end ( -- )
   ( this should hold some dramatic end sequence, nop for now ) ;
