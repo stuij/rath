@@ -871,7 +871,13 @@ seqmat: .word twodrop,rfrom,exit	/* u=0 */
     head splash_len,10,"splash-len",docon,splash
   .word 76800
 
-    head apt_tiles,9,"apt-tiles",dovar,splash_len
+    head end,3,"end",dovar,splash_len
+.incbin "end.img.bin"
+.align
+    head end_len,7,"end-len",docon,end
+  .word 76800
+
+    head apt_tiles,9,"apt-tiles",dovar,end_len
 .incbin "apartment-map.img.bin"
 .align
     head apt_tiles_len,13,"apt-tiles-len",docon,apt_tiles

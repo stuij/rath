@@ -1067,7 +1067,7 @@ e constant poster
 : fridge-str       s" You open the fridge. It is stacked from top to bottom with crisps.. Weird!" ;
 : poster-str       s" It's a poster of some art-house movie." ;
 
-: friend-call-init-str s" RING RING!!!\nRING RING!!!\n\nRING RING!!!\nRING RING!!!" ;
+: call-init-str s" RING RING!!!\nRING RING!!!\n\nRING RING!!!\nRING RING!!!" ;
 
 : set-in-dialog ( -- )
   ['] in-dialog main-loop-continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
@@ -1154,6 +1154,17 @@ e constant poster
   dup 1 poster     lshift and if drop poster-str      2 print-dispatch else
   drop then then then then then then then then then then then then then then ;
 
+
+( timed events )
+
+100 constant friend-call-wait-thresh
+100 constant sinister-call-wait-thresh
+100 constant end-seq-thresh
+100 constant end-scene-thresh
+
+: timed-events-idle ( -- )
+  ( nop) ;
+
 : timed-events-end ( -- )
   ( this should hold some dramatic end sequence, nop for now ) ;
 
@@ -1165,13 +1176,71 @@ e constant poster
   else 2drop 2drop
   then ;
 
+: bg-phone-show ( -- )
+  reg-dispcnt dup @ dcnt-bg2 or swap ! ;
+
+: bg-phone-hide ( -- )
+  reg-dispcnt dup @ dcnt-bg2 invert and swap ! ;
+
+( end sequence )
+
+: end-seq-splash ( -- )
+  key-a key-hit if
+    dissolve-dialog
+    end-init
+  then ;
+
+: end-seq-start ( -- )
+  timed-event-counter @ end-seq-thresh > if
+    s" you feel a bit woozy" 1 print-msg
+    set-in-dialog
+    ['] timed-events-idle timed-event-continuation !
+    ['] end-seq-splash main-loop-continuation !
+  then ;
+
+( sinister sequence )
+
+: sinister-hang-up ( -- )
+  key-a key-hit if
+    bg-phone-hide
+    dissolve-dialog
+    0 timed-event-counter !
+    ['] in-default main-loop-continuation !
+    ['] end-seq-start timed-event-continuation !
+  then ;
+
+: sinister-reply ( -- )
+  ['] sinister-hang-up
+  s" you: uh, yea, mebby.." 2
+  timed-dialog-seq ;
+
+: sinister-intro ( -- )
+  ['] sinister-reply
+  s" voice: I'm scary and you know it." 4
+  timed-dialog-seq ;
+
+: sinister-pick-up ( -- )
+  ['] sinister-intro
+  s" you: y'hullo?" 1
+  timed-dialog-seq ;
+
+: sinister-call ( -- )
+  timed-event-counter @ sinister-call-wait-thresh > if
+    bg-phone-show
+    call-init-str 5 print-msg
+    ['] sinister-pick-up main-loop-continuation !
+    ['] timed-events-idle timed-event-continuation !
+  then ;
+
 ( friend sequence )
 
 : friend-hang-up ( -- )
   key-a key-hit if
-    reg-dispcnt dup @ dcnt-bg2 invert and swap ! ( remove bg phone )
+    bg-phone-hide
     dissolve-dialog
+    0 timed-event-counter !
     ['] in-default main-loop-continuation !
+    ['] sinister-call timed-event-continuation !
   then ;
 
 : friend-reply ( -- )
@@ -1190,12 +1259,14 @@ e constant poster
   timed-dialog-seq ;
 
 : friend-call ( -- )
-  timed-event-counter @ 500 > if
-    reg-dispcnt dup @ dcnt-bg2 or swap ! ( add bg phone )
-    friend-call-init-str 5 print-msg
+  timed-event-counter @ friend-call-wait-thresh > if
+    bg-phone-show
+    call-init-str 5 print-msg
     ['] friend-pick-up main-loop-continuation !
-    ['] timed-events-end timed-event-continuation !
+    ['] timed-events-idle timed-event-continuation !
   then ;
+
+( timed events driver )
 
 : timed-events
   timed-event-continuation @ execute ;
@@ -1342,6 +1413,9 @@ e constant poster
   ['] intro main-loop-continuation ! ( uncomment for intro )
   gloop ;
 
+
+( splash screen )
+
 : splash-screen-init
   splash 0 cbb-offs splash-len move
   dcnt-mode3 dcnt-bg2 or reg-dispcnt set-reg ;
@@ -1355,9 +1429,40 @@ e constant poster
 
 : splash-init ( -- )
   splash-screen-init
+  1 fade-from-black ( this one is for the re-entry )
   splash-loop
   1 fade-to-black
   1c sbb-offs sbb-size 2 * 0 wfill ;
+
+
+( end screen )
+
+: end-screen-init
+  end 0 cbb-offs end-len move
+  dcnt-mode3 dcnt-bg2 or reg-dispcnt set-reg ;
+
+: end-loop ( -- )
+  begin
+    vsync
+    key-poll
+    key-a key-hit if
+      2 fade-to-black
+      splash-init
+      ( recursive, so ouch )
+      ( but how many times are you gonna play this in a row? )
+      apt
+    then
+    0
+  until ;
+
+: end-init
+  2 fade-to-black
+  end-screen-init
+  2 fade-from-black
+  end-loop ;
+
+
+( forth main )
 
 : init
   init-music

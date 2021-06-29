@@ -172,6 +172,7 @@ ass:
 	grit apartment-map.png phone.png -ftb -mR8 -mLs -pS -O shared
 	grit $(ASSETS)/snaggle.png -ftb -gB4 -gT 000000 -Mw 2 -Mh 4
 	grit $(ASSETS)/splash.png -gb -gB16 -ftb
+	grit $(ASSETS)/end.png -gb -gB16 -ftb
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
