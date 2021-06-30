@@ -609,6 +609,8 @@ variable key-prev
 : obj-ticks! 1e + h! ; ( ticks obj -- )
 : obj-idle@ 8 cells + h@ ; ( obj -- idle )
 : obj-idle! 8 cells + h! ; ( idle obj -- )
+: obj-idle-override@ 22 + h@ ; ( obj -- idle-override )
+: obj-idle-override! 22 + h! ; ( idle-override obj -- )
 
 : set-spr-cb-8x16 ( obj --  )
   dup obj-cb-offs 0 1 rot store-xy
@@ -620,7 +622,7 @@ variable key-prev
   dup obj-cb-width 2 swap !
   obj-cb-height 2 swap ! ;
 
-22 constant obj-size
+24 constant obj-size
 
 
 ( coordinate mapping, collision detection, things of interest )
@@ -788,12 +790,15 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
   obj-dir! ;
 
 : update-dir ( obj -- )
-  key-dir key-transit
-  if ( only update if there are actually any key-press changes )
-    ( if we point to same direction as before we don't change direction, )
-    ( so we face the same side when transitioning to/from diagonals. )
-    ( we only support 4 directions for now )
-    ( just update ticks )
+  ( if we point to same direction as before we don't change direction, )
+  ( so we face the same side when transitioning to/from diagonals. )
+  ( we only support 4 directions for now )
+  ( just update ticks )
+  dup obj-idle-override@ if
+    dup 0 swap obj-ticks!
+    dup 0 swap obj-idle-override!
+    1 swap obj-idle!
+  else
     dup obj-dir@ key-is-down
     if
       dup obj-idle@ if
@@ -813,12 +818,10 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
       1 swap obj-idle!
       then then then then
     then
-  else
-    obj-ticks-inc
   then ;
 
 : obj-set-spr-tid ( tid-offs obj )
-  tuck obj-tid-base@ +
+  tuck obj-tid-base@ + 2 *
   swap obj-spr@ spr-tid! ;
 
 ( 16x32 sprite sheet layout: )
@@ -1137,21 +1140,46 @@ e constant poster
     ['] couch-seq main-loop-continuation !
   else 2drop drop then ;
 
+( dispatchers )
+
+: kitchen-dialog kitchen-str 2 print-msg set-in-dialog ;
+: bed-dialog bed-start-str 1 print-msg ['] bed-seq main-loop-continuation ! ;
+: sink-dialog sink-str 2 print-msg set-in-dialog ;
+: toilet-dialog toilet-str 4 print-msg set-in-dialog ;
+: bath-dialog bath-str 3 print-msg set-in-dialog ;
+: couch-dialog couch-start-str 2 print-msg ['] couch-seq main-loop-continuation ! ;
+: tv-dialog tv-str 2 print-msg set-in-dialog ;
+: front-door-dialog front-door-str 1 print-msg set-in-dialog ;
+: desk-dialog desk-str 3 print-msg set-in-dialog ;
+: closet-dialog closet-str 4 print-msg set-in-dialog ;
+: clothes-dialog clothes-str 4 print-msg set-in-dialog ;
+: gamecube-dialog gamecube-str 1 print-msg set-in-dialog ;
+: fridge-dialog fridge-str 2 print-msg set-in-dialog ;
+: poster-dialog poster-str 2 print-msg set-in-dialog ;
+
+: toi-cont ( cont-xt -- )
+  key-a key-hit if
+    1 beany obj-idle-override!
+    main-loop-continuation !
+  else
+    drop
+  then ;
+
 : dispatch-toi ( toi -- )
-  dup 1 kitchen    lshift and if drop kitchen-str     2 print-dispatch else
-  dup 1 sleep      lshift and if drop bed-start-str   1 bed-dispatch   else
-  dup 1 sink       lshift and if drop sink-str        2 print-dispatch else
-  dup 1 toilet     lshift and if drop toilet-str      4 print-dispatch else
-  dup 1 bath       lshift and if drop bath-str        3 print-dispatch else
-  dup 1 couch      lshift and if drop couch-start-str 2 couch-dispatch else
-  dup 1 tv         lshift and if drop tv-str          2 print-dispatch else
-  dup 1 front-door lshift and if drop front-door-str  1 print-dispatch else
-  dup 1 desk       lshift and if drop desk-str        3 print-dispatch else
-  dup 1 closet     lshift and if drop closet-str      4 print-dispatch else
-  dup 1 clothes    lshift and if drop clothes-str     2 print-dispatch else
-  dup 1 gamecube   lshift and if drop gamecube-str    1 print-dispatch else
-  dup 1 fridge     lshift and if drop fridge-str      4 print-dispatch else
-  dup 1 poster     lshift and if drop poster-str      2 print-dispatch else
+  dup 1 kitchen    lshift and if drop ['] kitchen-dialog    toi-cont else
+  dup 1 sleep      lshift and if drop ['] bed-dialog        toi-cont else
+  dup 1 sink       lshift and if drop ['] sink-dialog       toi-cont else
+  dup 1 toilet     lshift and if drop ['] toilet-dialog     toi-cont else
+  dup 1 bath       lshift and if drop ['] bath-dialog       toi-cont else
+  dup 1 couch      lshift and if drop ['] couch-dialog      toi-cont else
+  dup 1 tv         lshift and if drop ['] tv-dialog         toi-cont else
+  dup 1 front-door lshift and if drop ['] front-door-dialog toi-cont else
+  dup 1 desk       lshift and if drop ['] desk-dialog       toi-cont else
+  dup 1 closet     lshift and if drop ['] closet-dialog     toi-cont else
+  dup 1 clothes    lshift and if drop ['] clothes-dialog    toi-cont else
+  dup 1 gamecube   lshift and if drop ['] gamecube-dialog   toi-cont else
+  dup 1 fridge     lshift and if drop ['] fridge-dialog     toi-cont else
+  dup 1 poster     lshift and if drop ['] poster-dialog     toi-cont else
   drop then then then then then then then then then then then then then then ;
 
 
@@ -1160,7 +1188,6 @@ e constant poster
 100 constant friend-call-wait-thresh
 100 constant sinister-call-wait-thresh
 100 constant end-seq-thresh
-100 constant end-scene-thresh
 
 : timed-events-idle ( -- )
   ( nop) ;
@@ -1191,11 +1218,15 @@ e constant poster
   then ;
 
 : end-seq-start ( -- )
+  s" you feel a bit woozy" 1 print-msg
+  set-in-dialog
+  ['] end-seq-splash main-loop-continuation ! ;
+
+: end-seq ( -- )
   timed-event-counter @ end-seq-thresh > if
-    s" you feel a bit woozy" 1 print-msg
-    set-in-dialog
+    1 beany obj-idle-override!
+    ['] end-seq-start main-loop-continuation !
     ['] timed-events-idle timed-event-continuation !
-    ['] end-seq-splash main-loop-continuation !
   then ;
 
 ( sinister sequence )
@@ -1206,7 +1237,7 @@ e constant poster
     dissolve-dialog
     0 timed-event-counter !
     ['] in-default main-loop-continuation !
-    ['] end-seq-start timed-event-continuation !
+    ['] end-seq timed-event-continuation !
   then ;
 
 : sinister-reply ( -- )
@@ -1224,11 +1255,15 @@ e constant poster
   s" you: y'hullo?" 1
   timed-dialog-seq ;
 
+: sinister-call-start ( -- )
+  bg-phone-show
+  call-init-str 5 print-msg
+  ['] sinister-pick-up main-loop-continuation ! ;
+
 : sinister-call ( -- )
   timed-event-counter @ sinister-call-wait-thresh > if
-    bg-phone-show
-    call-init-str 5 print-msg
-    ['] sinister-pick-up main-loop-continuation !
+    1 beany obj-idle-override!
+    ['] sinister-call-start main-loop-continuation !
     ['] timed-events-idle timed-event-continuation !
   then ;
 
@@ -1258,11 +1293,15 @@ e constant poster
   s" you: y'hullo?" 1
   timed-dialog-seq ;
 
+: friend-call-start
+  bg-phone-show
+  call-init-str 5 print-msg
+  ['] friend-pick-up main-loop-continuation ! ;
+
 : friend-call ( -- )
   timed-event-counter @ friend-call-wait-thresh > if
-    bg-phone-show
-    call-init-str 5 print-msg
-    ['] friend-pick-up main-loop-continuation !
+    1 beany obj-idle-override!
+    ['] friend-call-start main-loop-continuation !
     ['] timed-events-idle timed-event-continuation !
   then ;
 
@@ -1349,6 +1388,7 @@ e constant poster
   dup set-spr-cb-16x32
   dup 0 swap obj-ticks!
   dup 1 swap obj-idle!
+  dup 0 swap obj-idle-override!
   dup down swap obj-dir!
   dup 0 swap obj-tid-base! ( so basically mem-vram-obj )
   obj-coord 90 60 rot store-xy
