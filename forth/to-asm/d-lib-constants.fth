@@ -790,34 +790,39 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
   obj-dir! ;
 
 : update-dir ( obj -- )
-  ( if we point to same direction as before we don't change direction, )
-  ( so we face the same side when transitioning to/from diagonals. )
-  ( we only support 4 directions for now )
-  ( just update ticks )
-  dup obj-idle-override@ if
-    dup 0 swap obj-ticks!
-    dup 0 swap obj-idle-override!
-    1 swap obj-idle!
-  else
-    dup obj-dir@ key-is-down
-    if
-      dup obj-idle@ if
-        dup 0 swap obj-ticks!
-        0 swap obj-idle!
-      else
-        obj-ticks-inc
-      then
-    else
-      ( else point to direction in preset order of preference )
-      left  key-is-down if left  swap new-obj-dir else
-      right key-is-down if right swap new-obj-dir else
-      up    key-is-down if up    swap new-obj-dir else
-      down  key-is-down if down  swap new-obj-dir else
-      ( no key has been pressed. we're idle and we weren't before. )
+  key-dir key-transit
+  if
+    ( if we point to same direction as before we don't change direction, )
+    ( so we face the same side when transitioning to/from diagonals. )
+    ( we only support 4 directions for now )
+    ( just update ticks )
+    dup obj-idle-override@ if
       dup 0 swap obj-ticks!
+      dup 0 swap obj-idle-override!
       1 swap obj-idle!
-      then then then then
+    else
+      dup obj-dir@ key-is-down
+      if
+        dup obj-idle@ if
+          dup 0 swap obj-ticks!
+          0 swap obj-idle!
+        else
+          obj-ticks-inc
+        then
+      else
+        ( else point to direction in preset order of preference )
+        left  key-is-down if left  swap new-obj-dir else
+        right key-is-down if right swap new-obj-dir else
+        up    key-is-down if up    swap new-obj-dir else
+        down  key-is-down if down  swap new-obj-dir else
+        ( no key has been pressed. we're idle and we weren't before. )
+        dup 0 swap obj-ticks!
+        1 swap obj-idle!
+        then then then then
+      then
     then
+  else
+    obj-ticks-inc
   then ;
 
 : obj-set-spr-tid ( tid-offs obj )
