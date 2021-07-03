@@ -938,10 +938,10 @@ variable print-y-cur
 : print-char ( c -- )
   dup 0a =
   if drop print-nxt-line
-     feed-music
+     ( feed-music )
      print-x-base @ 1- print-x-cur !
   else
-    feed-music
+    ( feed-music )
     print-set-next-free-pos
     print-set-char
   then ;
@@ -965,7 +965,7 @@ variable print-y-cur
   print-y-base @ dup print-y-len @ + swap do
     print-x-base @ dup print-x-len @ + swap do
       dup
-      i 4 mod not if feed-music then
+      ( i 4 mod not if feed-music then )
       i swap print-pos c@
       i j font-map-pos h!
     loop
@@ -978,7 +978,7 @@ variable print-y-cur
     ( print-x-base @ dup print-x-len @ + 1+ swap do )
     1e 0 do
       dup i j font-bg-map-pos h!
-      i 4 mod not if feed-music then
+      ( i 4 mod not if feed-music then )
     loop
   loop drop ;
 
@@ -996,7 +996,7 @@ variable print-y-cur
 : clear-dialog ( -- )
   print-y-base @ dup print-y-len @ + swap do
     i print-y-cur !
-    feed-music
+    ( feed-music )
     print-clear-curr-line
   loop
   clear-dialog-text

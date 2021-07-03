@@ -39,7 +39,7 @@ int main() {
   // Set up the interrupt handlers
   irq_init(NULL);
   // Enable Vblank Interrupt to allow VblankIntrWait
-  irq_add(II_VBLANK, NULL);
+  irq_add(II_VBLANK, AAS_DoWork);
 
 #ifdef LINK_UART
   init_circ_buff(&g_uart_rcv_buffer, g_rcv_buffer, UART_RCV_BUFFER_SIZE);
@@ -113,7 +113,7 @@ int EWRAM_CODE service(int serv, int param) {
     }
   } else if (serv == 1) {
     if(in_music)
-      AAS_DoWork();
+      // AAS_DoWork();
     while(param--) VBlankIntrWait();
     return 0;
   } else if (serv == 2) {
@@ -141,7 +141,7 @@ int EWRAM_CODE service(int serv, int param) {
     return 0;
   } else if (serv == 4) {
     if(in_music)
-      AAS_DoWork();
+      // AAS_DoWork();
     return 0;
   } else if (serv == 5) {
     // Initialise AAS
