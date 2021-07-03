@@ -123,7 +123,15 @@ int EWRAM_CODE service(int serv, int param) {
     }
     return 0;
   } else if ( serv == 3) {
-    AAS_MOD_Stop();
+        AAS_SFX_Play(
+        0,
+        64,
+        8000,
+        AAS_DATA_SFX_START_Ring,
+        AAS_DATA_SFX_END_Ring,
+        NULL);
+
+    // AAS_MOD_Stop();
     /* int countdown = 10; */
     /* while(countdown--) { */
     /*   AAS_DoWork(); */

@@ -401,7 +401,7 @@ f000 constant attr2-palbank-mask
 
 ( wait for vblank interrupt )
 : start-music 1 2 bdos drop ; ( -- )
-: stop-music 1 3 bdos drop ; ( -- )
+: play-ring 1 3 bdos drop ; ( -- )
 : feed-music 1 4 bdos drop ; ( -- )
 : init-music 1 5 bdos drop ; ( -- )
 
@@ -1070,7 +1070,7 @@ e constant poster
 : fridge-str       s" You open the fridge. It is stacked from top to bottom with crisps.. Weird!" ;
 : poster-str       s" It's a poster of some art-house movie." ;
 
-: call-init-str s" RING RING!!!\nRING RING!!!\n\nRING RING!!!\nRING RING!!!" ;
+: call-init-str s" RING RING!!!" ;
 
 : set-in-dialog ( -- )
   ['] in-dialog main-loop-continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
@@ -1256,8 +1256,9 @@ e constant poster
   timed-dialog-seq ;
 
 : sinister-call-start ( -- )
+  play-ring
   bg-phone-show
-  call-init-str 5 print-msg
+  call-init-str 1 print-msg
   ['] sinister-pick-up main-loop-continuation ! ;
 
 : sinister-call ( -- )
@@ -1294,8 +1295,9 @@ e constant poster
   timed-dialog-seq ;
 
 : friend-call-start
+  play-ring
   bg-phone-show
-  call-init-str 5 print-msg
+  call-init-str 1 print-msg
   ['] friend-pick-up main-loop-continuation ! ;
 
 : friend-call ( -- )
