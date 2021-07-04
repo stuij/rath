@@ -1030,7 +1030,7 @@ variable print-y-cur
   0 <# #s #> ;
 
 : set-transp-txt-bg ( -- )
-  bld-std bld-bg1 bld-bg2 bld-bg3 or bld-set
+  bld-std bld-bg1 bld-bg2 bld-bg3 or bld-obj or bld-set
   6 4 bldalpha-set ;
 
 
@@ -1475,10 +1475,10 @@ e constant poster
   dcnt-bg3 or
   reg-dispcnt set-reg
 
-  2 bg-cbb 1d bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg0cnt set-reg ( txt )
-  0 bg-cbb 1c bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg1cnt set-reg ( txt bg )
-  1 bg-cbb 1b bg-sbb or bg-8bpp or bg-reg-32x32 or reg-bg2cnt set-reg ( phone )
-  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or reg-bg3cnt set-reg ( apt ) ;
+  2 bg-cbb 1d bg-sbb or bg-8bpp or bg-reg-32x32 or 0 or reg-bg0cnt set-reg ( txt )
+  0 bg-cbb 1c bg-sbb or bg-8bpp or bg-reg-32x32 or 0 or reg-bg1cnt set-reg ( txt bg )
+  1 bg-cbb 1b bg-sbb or bg-8bpp or bg-reg-32x32 or 1 or reg-bg2cnt set-reg ( phone )
+  0 bg-cbb 1e bg-sbb or bg-8bpp or bg-reg-64x32 or 1 or reg-bg3cnt set-reg ( apt ) ;
 
 
 : apt-bg-init ( -- )
