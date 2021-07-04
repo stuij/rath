@@ -1052,28 +1052,40 @@ c constant gamecube
 d constant fridge
 e constant poster
 
-: intro-str1       s" \nIt's now " ;
-: intro-str2       s" days since\nlockdown. It's your life,\nhave fun.\n\n\nPress A to interact with\nthings and to exit dialogs.\n" ;
+: intro-str1       s" It's " ;
+: intro-str2       s" days since the\nstart of lockdown.\n\nYou're very bored.\n\nPress A to interact with things and to exit dialogs." ;
 
-: couch-start-str  s" I'll just take a tiny nap. \nJust 15 minutes max!" ;
-: couch-wake1-str  s" You wake up with a faint headache. You don't know what time it is exactly, but it's the next day. It's now day " ;
-: couch-wake2-str  s" of Covid lockdown. And there's no end in sight." ;
+: couch-start-str  s" The couch is calling you. 'Lay down', it says, 'you deserve it'.\n\nYou wipe away the crisps, get comfy and you think: I'll just take a tiny nap.. Just 15 minutes max!" ;
+: couch-wake1-str  s" It's " ;
+: couch-wake2-str  s" days since the\nstart of lockdown.\n\nYou pluck some stale pieces of crisps from your body, eat them, and regret it.\n\nBut you're ready to take on this new day!! Or perhaps a little doze couldn't hurt.. To ease you into it..\n\nCouch says: Yes!!" ;
 
-: bed-start-str    s" why not.." ;
-: bed-wake1-str    s" You just slept through another night, feeling guilty you seemingly didn't do anything yesterday. Today is day " ;
-: bed-wake2-str    s" of Covid lockdown, and it's almost time for lunch. sigh..." ;
-: kitchen-str      s" Where is my green-blue\nspatula!" ;
-: sink-str         s" Pyjama's, you're my frend\ntill the end.." ;
-: toilet-str       s" You ascend your throne, whipout your GBA, and settle\ndown for another 3 hr\nsession of Crazy Taxi." ;
-: bath-str         s" The bath just reminds you ofthat day rubber ducky went\nout to get a pack of smokes." ;
-: tv-str           s" ... 12 years of lock-down.. is it TOO much??? ..." ;
-: front-door-str   s" You shall not pass!!" ;
-: desk-str         s" should get ready for that\nZoom meeting with rubber\nducky in half an hour" ;
-: closet-str       s" You open the closet door,\nsnuggle up in the left\ncorner and rock your body\nback and forth for a bit." ;
-: clothes-str      s" Yup, some dirty clothes on the floor." ;
-: gamecube-str     s" A gamecube.." ;
-: fridge-str       s" You open the fridge. It is stacked from top to bottom with crisps.. Weird!" ;
-: poster-str       s" It's a poster of some art-house movie." ;
+: bed-start-str    s" How can you resist?.." ;
+: bed-wake1-str    s" It's " ;
+: bed-wake2-str    s" days since the\nstart of lockdown. Another day gone.\n\nBut you had a nice dream.\n\nYou dreamt that you were alone in your apartment.\n\nNo responsibilities, no goals, no plans.\n\nWait, that wasn't a nice dream at all!!\n\nWas it even a dream..\n\nAre you awake?" ;
+
+: kitchen-str      s" Tonight you will make vegan tiramisu with brocolli.\n\nIt's a bit of a risky combination, but you are sure you can pull it off.\n\nIf only you could find that blue spatula.." ;
+
+: sink-str         s" You turn on the hot water, and let it run over your wrists for a while.\n\nIt's a soothing feeling. You feel refreshed." ;
+
+: toilet-str       s" You ascend your throne, whip out your Game Boy Advance, and settle down for another three hour session of Elf Bowling. Nr 2 this time." ;
+
+: bath-str         s" The bath just reminds you of that day rubber ducky went out to get a pack of smokes." ;
+
+: tv-str           s" You flick the TV to a news program.\n\n'... estimate that the zombie hordes might now have reached Nebraska. Perhaps Florida too, but there it's hard to tell them apart from the population ...'\n\nYou sigh.. Always the same old, same old." ;
+
+: front-door-str   s" You shall not pass!!\n\nWell, it's not that dramatic. But you haven't opened the door in months.\n\nIn fact you kinda lost your keys. Last week, a search didn't show up anything. Perhaps you SHOULD be worried." ;
+
+: desk-str         s" Your desk. It's so tidy. Not a thing out of place. There's a film of dust on the laptop keys.\n\nYour eyes try to avoid the scene. You don't want to be here." ;
+
+: closet-str       s" You open the right closet door,snuggle up in the corner and rock your body back and forth for a bit.\n\nYou get out again, and close the door gently. You're fine!" ;
+
+: clothes-str      s" You wore proper clothes back then. They made you look respectable. They made you fit in. Now you don't fit them anymore.\n\n And why should you! Pyjama's stretch to fit YOU. They hug you always just as much as you need. Your best friends till the end." ;
+
+: gamecube-str     s" Looking at your Gamecube, your eyes well up. It is serenading you with the whizzy sounds of its CD drive. Like a beautiful whale song.\n\nIt is surely sentient, and it is trying to tell you something... If only you could speak Gamecube.." ;
+
+: fridge-str       s" You open the fridge. It is stacked from top to bottom with crisps.. Not in bags, but individual crisps!\n\nWeird! You have no memory of this whatsoever.\n\nYou feel a panic attack coming up, and you smartly smother it by shoving crisps into your mouth." ;
+
+: poster-str       s" It's a really nice poster of some art-house movie.\n\nYou haven't seen the movie.\n\nYou would like to, but you are afraid that you won't like the movie and then you're stuck wit a poster that reminds you of a shitty movie." ;
 
 : call-init-str s" RING RING!!!" ;
 
@@ -1090,6 +1102,7 @@ e constant poster
   key-a key-hit if print-msg set-in-dialog else 2drop drop then ;
 
 : print-covid-date ( -- )
+  bl print-char
   covid-date @ nr-to-str str-print
   bl print-char ;
 
@@ -1117,7 +1130,7 @@ e constant poster
 
 ( bed dialog )
 : bed-wake-dialog ( -- )
-  bed-wake2-str bed-wake1-str 8 print-covid-msg set-in-dialog ;
+  bed-wake2-str bed-wake1-str 12 print-covid-msg set-in-dialog ;
 
 : bed-seq ( -- )
   key-a key-hit if
@@ -1132,7 +1145,7 @@ e constant poster
 
 ( couch dialog )
 : couch-wake-dialog ( -- )
-  couch-wake2-str couch-wake1-str 6 print-covid-msg set-in-dialog ;
+  couch-wake2-str couch-wake1-str d print-covid-msg set-in-dialog ;
 
 : couch-seq ( -- )
   key-a key-hit if
@@ -1147,20 +1160,29 @@ e constant poster
 
 ( dispatchers )
 
-: kitchen-dialog kitchen-str 2 print-msg set-in-dialog ;
+: gamecube-dialog ( addr size dia-len -- )
+  b print-y-len !
+  gamecube-str str-print
+  space print-char d print-char e print-char
+  space print-char d print-char e print-char
+  8 draw-txt-bg
+  print-dialog
+  set-in-dialog ;
+
+
+: kitchen-dialog kitchen-str 9 print-msg set-in-dialog ;
 : bed-dialog bed-start-str 1 print-msg ['] bed-seq main-loop-continuation ! ;
-: sink-dialog sink-str 2 print-msg set-in-dialog ;
-: toilet-dialog toilet-str 4 print-msg set-in-dialog ;
+: sink-dialog sink-str 6 print-msg set-in-dialog ;
+: toilet-dialog toilet-str 5 print-msg set-in-dialog ;
 : bath-dialog bath-str 3 print-msg set-in-dialog ;
-: couch-dialog couch-start-str 2 print-msg ['] couch-seq main-loop-continuation ! ;
-: tv-dialog tv-str 2 print-msg set-in-dialog ;
-: front-door-dialog front-door-str 1 print-msg set-in-dialog ;
-: desk-dialog desk-str 3 print-msg set-in-dialog ;
-: closet-dialog closet-str 4 print-msg set-in-dialog ;
-: clothes-dialog clothes-str 4 print-msg set-in-dialog ;
-: gamecube-dialog gamecube-str 1 print-msg set-in-dialog ;
-: fridge-dialog fridge-str 2 print-msg set-in-dialog ;
-: poster-dialog poster-str 2 print-msg set-in-dialog ;
+: couch-dialog couch-start-str 8 print-msg ['] couch-seq main-loop-continuation ! ;
+: tv-dialog tv-str c print-msg set-in-dialog ;
+: front-door-dialog front-door-str b print-msg set-in-dialog ;
+: desk-dialog desk-str 8 print-msg set-in-dialog ;
+: closet-dialog closet-str 8 print-msg set-in-dialog ;
+: clothes-dialog clothes-str b print-msg set-in-dialog ;
+: fridge-dialog fridge-str c print-msg set-in-dialog ;
+: poster-dialog poster-str b print-msg set-in-dialog ;
 
 : toi-cont ( cont-xt -- )
   key-a key-hit if
@@ -1190,9 +1212,10 @@ e constant poster
 
 ( timed events )
 
-100 constant friend-call-wait-thresh
-100 constant sinister-call-wait-thresh
-100 constant end-seq-thresh
+( 1000 ) 5 constant friend-call-wait-thresh
+( 750 ) 5 constant sinister-call-wait-thresh
+( 500 ) 5 constant woozy-wait-thresh
+( 750 ) 5 constant end-seq-thresh
 
 : timed-events-idle ( -- )
   ( nop) ;
@@ -1223,7 +1246,7 @@ e constant poster
   then ;
 
 : end-seq-start ( -- )
-  s" you feel a bit woozy" 1 print-msg
+  s" Your feet give out and you tumble over. Your arms refuse to break your fall and your head hits the ground..\n\nHard." 7 print-msg
   set-in-dialog
   ['] end-seq-splash main-loop-continuation ! ;
 
@@ -1234,30 +1257,49 @@ e constant poster
     ['] timed-events-idle timed-event-continuation !
   then ;
 
+: palette-invert
+  apt-pal-len 0 do
+    mem-pal-bg i + dup @ invert swap !
+  4 +loop ;
+
+: woozy-start ( -- )
+  s" You're starting feel a bit woozy, and your eyes seem to be loosing their grip on what colors should look like. This isn't good..." 5 print-msg
+  palette-invert
+  0 timed-event-counter !
+  set-in-dialog
+  ['] end-seq timed-event-continuation ! ;
+
+: woozy-seq ( -- )
+  timed-event-counter @ woozy-wait-thresh > if
+    1 beany obj-idle-override!
+    ['] woozy-start main-loop-continuation !
+    ['] timed-events-idle timed-event-continuation !
+  then ;
+
 ( sinister sequence )
 
 : sinister-hang-up ( -- )
   key-a key-hit if
-    bg-phone-hide
     dissolve-dialog
+    bg-phone-hide
     0 timed-event-counter !
     ['] in-default main-loop-continuation !
-    ['] end-seq timed-event-continuation !
+    ['] woozy-seq timed-event-continuation !
   then ;
 
 : sinister-reply ( -- )
   ['] sinister-hang-up
-  s" you: uh, yea, mebby.." 2
+  s" you: S'cuse me. Who is this...\n\nBut they hung up.\n\nThat was.. frightening to be honest. You're trying to shake it off, without much luck.\n\nYou need to do something pronto, but what?" c
   timed-dialog-seq ;
 
 : sinister-intro ( -- )
   ['] sinister-reply
-  s" voice: I'm scary and you know it." 4
+  s" voice: Hi there. I've been watching you for a while now. I was just wondering.. should you really have eaten that banana lying just inside your front door? You look a bit unsteady.. How is your tummy? Poor you.. I'm so sorry. It's my fault really.." a
   timed-dialog-seq ;
 
 : sinister-pick-up ( -- )
   ['] sinister-intro
-  s" you: y'hullo?" 1
+  s" you: Ok, listen for a bit. Don't just hang up again like the ass you can be. Got something to tell you.." 4
   timed-dialog-seq ;
 
 : sinister-call-start ( -- )
@@ -1277,21 +1319,26 @@ e constant poster
 
 : friend-hang-up ( -- )
   key-a key-hit if
-    bg-phone-hide
     dissolve-dialog
+    bg-phone-hide
     0 timed-event-counter !
     ['] in-default main-loop-continuation !
     ['] sinister-call timed-event-continuation !
   then ;
 
-: friend-reply ( -- )
+: friend-talk-over ( -- )
   ['] friend-hang-up
-  s" you: uh, yea, mebby.." 2
+  s" friend: Ok, yea, sure.. Listen, I'm a bit short on time. Call you back in a bit. Hang in there tiger!\n\nYour friend hung up already.\n\nYou sigh.. He's really fun to be around, but he is such a freeloader and he doesn't listen ever." b
+  timed-dialog-seq ;
+
+: friend-reply ( -- )
+  ['] friend-talk-over
+  s" This is a bit of a reality check. You're not sure if you can still speak.\n\nYou croak: Yea,.. maybe.. I kinda lost my keys.. Ehh.. How are you?.." 7
   timed-dialog-seq ;
 
 : friend-intro ( -- )
   ['] friend-reply
-  s" friend: Hey, so d'ya hear, lockdown is over in a couple of days. Wanna hang out in the park?" 4
+  s" friend: Hey, been ages. I'm sure you're fine. Yea so d'ya hear, lockdown is over in a couple of days. Wanna come to Crimson Park on Friday? At 2. Oh, and could you take me there?" 7
   timed-dialog-seq ;
 
 : friend-pick-up ( -- )
@@ -1337,14 +1384,20 @@ e constant poster
   update-actions
   update-anim ;
 
+: intro-out ( -- )
+  key-a key-hit if
+    1 attr2-prio-shift lshift beany @ attr2@ or beany @ attr2!
+    exit-dialog
+  then ;
+
 : intro ( -- )
   vsync
   2 fade-from-black
   vsync
 
   set-transp-txt-bg
-  intro-str2 intro-str1 9 print-covid-msg
-  set-in-dialog ;
+  intro-str2 intro-str1 7 print-covid-msg
+  ['] intro-out main-loop-continuation ! ;
 
 : mem-1+ ( addr )
   dup @ 1+ swap ! ;
@@ -1503,6 +1556,7 @@ e constant poster
   until ;
 
 : end-init
+  mem-pal-bg dup @ invert swap !
   2 fade-to-black
   end-screen-init
   2 fade-from-black
