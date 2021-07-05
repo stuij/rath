@@ -979,7 +979,7 @@ variable print-y-cur
   drop ;
 
 : draw-txt-bg ( tile -- )
-  print-y-base @ dup print-y-len @ + swap do
+  print-y-base @ 1- dup print-y-len @ 2 + + swap do
     ( print-x-base @ dup print-x-len @ + 1+ swap do )
     1e 0 do
       dup i j font-bg-map-pos h!
@@ -994,7 +994,7 @@ variable print-y-cur
 : set-dialog-dimensions
   1  print-x-base !
   1c print-x-len !
-  0 print-y-base !
+  1 print-y-base !
   4 print-y-len !
   reset-dialog-pos ;
 
