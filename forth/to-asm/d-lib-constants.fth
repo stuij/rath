@@ -56,7 +56,7 @@ mem-io constant reg-dispcnt  ( display control )
    8 constant dcnt-layer-shift
 
 e000 constant dcnt-win-mask
-  13 constant dcnt-win-shift
+   d constant dcnt-win-shift
 
 ( reg-dipstat )
 mem-io 0004 + constant reg-dispstat ( display status )
@@ -115,7 +115,7 @@ c000 constant bg-aff-128x128 ( affine bg, 128x128, 1024x1024 px )
 : bg-sbb bg-sbb-shift lshift ; ( n -- n )
 
 c000 constant bg-size-mask
-  14 constant bg-size-shift
+   e constant bg-size-shift
 
 : cbb-offs cbb-size * mem-vram-bg + ; ( index -- addr )
 : sbb-offs sbb-size * mem-vram-bg + ; ( index -- addr )
@@ -196,7 +196,7 @@ mem-io 04c + constant reg-mosaic ( mosaic control )
    8 constant mos-oh-shift
 
 f000 constant mos-ov-mask
-  12 constant mos-ov-shift
+   c constant mos-ov-shift
 
 ( blend control )
 mem-io 050 + constant reg-bldcnt ( blend control )
@@ -334,7 +334,7 @@ mem-io 300 + constant reg-pause ( pause system ? )
    8 constant attr0-mode-shift
 
 c000 constant attr0-shape-mask
-  14 constant attr0-shape-shift
+   e constant attr0-shape-shift
 
 ( attr1 )
 
@@ -368,10 +368,10 @@ c000 constant attr1-size-64x32 ( size flag for 64x64 px object )
    9 constant attr1-aff-id-shift
 
 3000 constant attr1-flip-mask
-  12 constant attr1-flip-shift
+   c constant attr1-flip-shift
 
 c000 constant attr1-size-mask
-  14 constant attr1-size-shift
+   e constant attr1-size-shift
 
 
 ( attr2 )
@@ -380,10 +380,10 @@ c000 constant attr1-size-mask
    0 constant attr2-id-shift
 
 0c00 constant attr2-prio-mask
-  10 constant attr2-prio-shift
+   a constant attr2-prio-shift
 
 f000 constant attr2-palbank-mask
-  12 constant attr2-palbank-shift
+   c constant attr2-palbank-shift
 
 
 ( helpers - a bunch, if not all, of these should travel to assembly )
