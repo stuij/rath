@@ -1036,6 +1036,11 @@ variable print-y-cur
 
 ( actions/things of interest )
 
+variable apt-seq-iter
+variable fridge-opened
+variable friend-called
+variable exit-apt-seq
+
 0 constant collisions
 1 constant kitchen
 2 constant sink
@@ -1053,7 +1058,7 @@ d constant fridge
 e constant poster
 
 : intro-str1       s" It's " ;
-: intro-str2       s" days since the\nstart of lockdown.\n\nYou're very bored.\n\nPress A to interact with things and to exit dialogs." ;
+: intro-str2       s" days since the\nstart of lockdown.\n\nYou've got a splitting headache, and you wonder why you just woke up lying on the kitchen floor.\n\n\n\nPress A to interact with things and to exit dialogs." ;
 
 : couch-start-str  s" The couch is calling you. 'Lay down', it says, 'you deserve it'.\n\nYou wipe away the crisps, get comfy and you think: I'll just take a tiny nap.. Just 15 minutes max!" ;
 : couch-wake1-str  s" It's " ;
@@ -1083,7 +1088,7 @@ e constant poster
 
 : gamecube-str     s" Looking at your Gamecube, your eyes well up. It is serenading you with the whizzy sounds of its CD drive. Like a beautiful whale song.\n\nIt is surely sentient, and it is trying to tell you something... If only you could speak Gamecube.." ;
 
-: fridge-str       s" You open the fridge. It is stacked from top to bottom with crisps.. Not in bags, but individual crisps!\n\nWeird! You have no memory of this whatsoever.\n\nYou feel a panic attack coming up, and you smartly smother it by shoving crisps into your mouth." ;
+: fridge-str       s" You open the fridge. It is stacked from top to bottom with mushrooms.. Individual mushrooms!\n\nStrange! You have no memory of this whatsoever.\n\nYou feel a panic attack coming up, and you smother it by shoving mushrooms into your mouth. They taste weird." ;
 
 : poster-str       s" It's a really nice poster of some art-house movie.\n\nYou haven't seen the movie.\n\nYou would like to, but you are afraid that you won't like the movie and then you're stuck wit a poster that reminds you of a shitty movie." ;
 
@@ -1169,6 +1174,13 @@ e constant poster
   print-dialog
   set-in-dialog ;
 
+: fridge-dialog
+  fridge-str d print-msg set-in-dialog
+  1 fridge-opened !
+  friend-called @ if
+    0 timed-event-counter !
+    ['] sinister-call timed-event-continuation !
+  then ;
 
 : kitchen-dialog kitchen-str 9 print-msg set-in-dialog ;
 : bed-dialog bed-start-str 1 print-msg ['] bed-seq main-loop-continuation ! ;
@@ -1181,7 +1193,6 @@ e constant poster
 : desk-dialog desk-str 8 print-msg set-in-dialog ;
 : closet-dialog closet-str 8 print-msg set-in-dialog ;
 : clothes-dialog clothes-str b print-msg set-in-dialog ;
-: fridge-dialog fridge-str c print-msg set-in-dialog ;
 : poster-dialog poster-str b print-msg set-in-dialog ;
 
 : toi-cont ( cont-xt -- )
@@ -1212,10 +1223,11 @@ e constant poster
 
 ( timed events )
 
-( 1000 ) 5 constant friend-call-wait-thresh
-( 750 ) 5 constant sinister-call-wait-thresh
-( 500 ) 5 constant woozy-wait-thresh
-( 750 ) 5 constant end-seq-thresh
+900 constant friend-call-wait-thresh
+500 constant suggest-wait-thresh
+500 constant sinister-call-wait-thresh
+500 constant woozy-wait-thresh
+500 constant end-seq-thresh
 
 : timed-events-idle ( -- )
   ( nop) ;
@@ -1242,7 +1254,10 @@ e constant poster
 : end-seq-splash ( -- )
   key-a key-hit if
     dissolve-dialog
-    end-init
+    mem-pal-bg dup @ invert swap !
+    2 fade-to-black
+    0 timed-event-counter !
+    1 exit-apt-seq !
   then ;
 
 : end-seq-start ( -- )
@@ -1289,12 +1304,12 @@ e constant poster
 
 : sinister-reply ( -- )
   ['] sinister-hang-up
-  s" you: S'cuse me. Who is this...\n\nBut they hung up.\n\nThat was.. frightening to be honest. You're trying to shake it off, without much luck.\n\nYou need to do something pronto, but what?" c
+  s" you: s'cuse me. Who is this...\n\nLooks like they hung up.\n\nThat was.. frightening to be honest. You're trying to shake it off, without much luck.\n\nYou need to do something pronto, but what?" c
   timed-dialog-seq ;
 
 : sinister-intro ( -- )
   ['] sinister-reply
-  s" voice: Hi there. I've been watching you for a while now. I was just wondering.. should you really have eaten that banana lying just inside your front door? You look a bit unsteady.. How is your tummy? Poor you.. I'm so sorry. It's my fault really.." a
+  s" voice: You!! Finally! Hi.. This is me. I mean you. Us! Please trust me.. Those mushrooms in your fridge.. Don't eat them! Just don't! Don't tell me you ate them.. You ate them!?!?! Listen, you're stuck in a..\n\n<disturbing garbled sound>" a
   timed-dialog-seq ;
 
 : sinister-pick-up ( -- )
@@ -1315,15 +1330,49 @@ e constant poster
     ['] timed-events-idle timed-event-continuation !
   then ;
 
+( suggest sequence )
+: suggest-end
+  key-a key-hit if
+    dissolve-dialog
+    bg-phone-hide
+    0 timed-event-counter !
+    ['] in-default main-loop-continuation !
+
+    fridge-opened @ if
+      ['] sinister-call timed-event-continuation !
+    then
+  then ;
+
+: suggest-start
+  s" You're very hungry. Your tummy growls. You wonder if there's still some of that squash soup left in the fridge." 5 print-msg
+  ['] suggest-end main-loop-continuation ! ;
+
+: suggest-seq ( -- )
+  timed-event-counter @ suggest-wait-thresh > if
+    fridge-opened @ if
+      ['] sinister-call timed-event-continuation !
+    else
+      1 beany obj-idle-override!
+      ['] suggest-start main-loop-continuation !
+      ['] timed-events-idle timed-event-continuation !
+    then
+ then ;
+
 ( friend sequence )
 
 : friend-hang-up ( -- )
   key-a key-hit if
     dissolve-dialog
     bg-phone-hide
+    1 friend-called !
     0 timed-event-counter !
     ['] in-default main-loop-continuation !
-    ['] sinister-call timed-event-continuation !
+
+    fridge-opened @ if
+      ['] sinister-call timed-event-continuation !
+    else
+      ['] suggest-seq timed-event-continuation !
+    then
   then ;
 
 : friend-talk-over ( -- )
@@ -1338,7 +1387,14 @@ e constant poster
 
 : friend-intro ( -- )
   ['] friend-reply
-  s" friend: Hey, been ages. I'm sure you're fine. Yea so d'ya hear, lockdown is over in a couple of days. Wanna come to Crimson Park on Friday? At 2. Oh, and could you take me there?" 7
+  apt-seq-iter @
+  dup 0 = if drop
+    s" friend: Hey, been ages. I'm sure you're fine. Yea so d'ya hear, lockdown is over in a couple of days probably. Wanna come to Crimson Park on Friday? At 2. Oh, and could you take me there?" 8
+  else dup 1 = if drop
+    s" friend: Where were you on Friday. Not cool man. Not cool. I ended up riding with Eileen. So embaressing. Anyways, can I come over in a bit? I'm out of smokes, and it looks like lockdown is going to end for real now. And hardly any zombies about." a
+  else drop
+    s" friend: What! You're still here? Respect, but we're fresh out of content for this demo. Hope you liked it. Hang around for as much as you want. The house is all yours. Just don't eat too many of those mushrooms." 9
+  then then
   timed-dialog-seq ;
 
 : friend-pick-up ( -- )
@@ -1396,7 +1452,7 @@ e constant poster
   vsync
 
   set-transp-txt-bg
-  intro-str2 intro-str1 7 print-covid-msg
+  intro-str2 intro-str1 c print-covid-msg
   ['] intro-out main-loop-continuation ! ;
 
 : mem-1+ ( addr )
@@ -1421,7 +1477,8 @@ e constant poster
     update-world
     ( music buffer stuffing happens in C before vsync irq call )
     vsync
-    select key-hit
+    ( select key-hit )
+    exit-apt-seq @ 1 =
   until ;
 
 
@@ -1496,7 +1553,12 @@ e constant poster
 
 : timed-event-init
   0 timed-event-counter !
-  ['] friend-call timed-event-continuation ! ;
+  ['] ( end-seq ) friend-call timed-event-continuation ! ;
+
+: apt-misc-init
+  0 fridge-opened !
+  0 friend-called !
+  0 exit-apt-seq ! ;
 
 ( init all )
 : apt ( -- )
@@ -1505,8 +1567,8 @@ e constant poster
   font-init
   phone-init
   apt-bg-init
+  apt-misc-init
   timed-event-init
-  2332 covid-date !
   ['] in-default main-loop-continuation !
   update-world
   apt-graphics-mode-init
@@ -1531,8 +1593,7 @@ e constant poster
   splash-screen-init
   1 fade-from-black ( this one is for the re-entry )
   splash-loop
-  1 fade-to-black
-  1c sbb-offs sbb-size 2 * 0 wfill ;
+  1 fade-to-black ;
 
 
 ( end screen )
@@ -1542,34 +1603,42 @@ e constant poster
   dcnt-mode3 dcnt-bg2 or reg-dispcnt set-reg ;
 
 : end-loop ( -- )
+  2 fade-from-black
   begin
     vsync
     key-poll
     key-a key-hit if
       2 fade-to-black
-      splash-init
-      ( recursive, so ouch )
-      ( but how many times are you gonna play this in a row? )
-      apt
+      1
+    else
+      0
     then
-    0
   until ;
 
-: end-init
-  mem-pal-bg dup @ invert swap !
-  2 fade-to-black
-  end-screen-init
-  2 fade-from-black
-  end-loop ;
+: fill-txt-phone-tile-indexes
+  1c sbb-offs sbb-size 2 * 0 wfill ;
 
+: main-meta-loop ( -- )
+  begin
+    fill-txt-phone-tile-indexes
+    apt
+    end-screen-init
+    end-loop
+    apt-seq-iter mem-1+
+    covid-date mem-1+
+    0
+  until ;
 
 ( forth main )
 
 : init
+  ( init-spr )
+  1000 covid-date !
+  0 apt-seq-iter !
   init-music
   start-music
   splash-init ( uncomment for intro )
-  apt ;
+  main-meta-loop ;
 
 ( implement this at some point: commercial rom WAITCNT settings )
 ( REG_WAITCNT = 0x4317 )
