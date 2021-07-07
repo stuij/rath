@@ -1453,13 +1453,13 @@ e constant poster
   dup 0 swap obj-tid-base! ( so basically mem-vram-obj )
   obj-coord 90 60 rot store-xy
 
-  snaggle-tiles mem-vram-obj c00 move
+  snaggle-tiles mem-vram-obj 1800 move
   snaggle-pal mem-pal-obj 200 move
 
   init-spr-list
   10 alloc-spr beany !
   0 beany @ spr-pal!
-  attr0-tall beany-equ-offs-y @ or beany @ attr0!
+  attr0-tall attr0-8bpp or beany-equ-offs-y @ or beany @ attr0!
   beany-equ-offs-x @ attr1-size-16x32 or beany @ attr1! ;
 
 : set-to-black ( -- )
