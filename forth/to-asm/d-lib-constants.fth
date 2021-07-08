@@ -1087,7 +1087,7 @@ e constant poster
 
 : tv-str           s" You flick the TV to a news program.\n\n'... estimate that the zombie hordes might now have reached Nebraska. Perhaps Florida too, but there it's hard to tell them apart from the population ...'\n\nYou sigh.. Always the same old, same old." ;
 
-: front-door-str   s" You shall not pass!!\n\nWell, it's not that dramatic. But you haven't opened the door in months.\n\nIn fact you kinda lost your keys. Last week, a search didn't show up anything. Perhaps you SHOULD be worried." ;
+: front-door-str   s" You shall not pass!!\n\nWell, it's not that dramatic. But you haven't opened the door in months.\n\nIn fact you kinda lost your keys. Last week, a search didn't show up anything.\n\nPerhaps you SHOULD be worried." ;
 
 : desk-str         s" Your desk. It's so tidy. Not a thing out of place. There's a film of dust on the laptop keys.\n\nYour eyes try to avoid the scene. You don't want to be here." ;
 
@@ -1099,7 +1099,7 @@ e constant poster
 
 : fridge-str       s" You open the fridge. It is stacked from top to bottom with mushrooms.. Individual mushrooms!\n\nStrange! You have no memory of this whatsoever.\n\nYou feel a panic attack coming up, and you smother it by shoving mushrooms into your mouth. They taste weird." ;
 
-: poster-str       s" It's a really nice poster of some art-house movie.\n\nYou haven't seen the movie.\n\nYou would like to, but you are afraid that you won't like the movie and then you're stuck wit a poster that reminds you of a shitty movie." ;
+: poster-str       s" It's a really nice poster of some art-house movie.\n\nYou haven't seen the movie.\n\nYou would like to, but you are afraid that you won't like the movie and then you're stuck with a poster that reminds you of a shitty movie." ;
 
 : call-init-str s" RING RING!!!" ;
 
@@ -1198,7 +1198,7 @@ e constant poster
 : bath-dialog bath-str 3 print-msg set-in-dialog ;
 : couch-dialog couch-start-str 8 print-msg ['] couch-seq main-loop-continuation ! ;
 : tv-dialog tv-str c print-msg set-in-dialog ;
-: front-door-dialog front-door-str b print-msg set-in-dialog ;
+: front-door-dialog front-door-str c print-msg set-in-dialog ;
 : desk-dialog desk-str 8 print-msg set-in-dialog ;
 : closet-dialog closet-str 8 print-msg set-in-dialog ;
 : clothes-dialog clothes-str b print-msg set-in-dialog ;
@@ -1391,7 +1391,7 @@ e constant poster
 
 : friend-reply ( -- )
   ['] friend-talk-over
-  s" This is a bit of a reality check. You're not sure if you can still speak.\n\nYou croak: Yea,.. maybe.. I kinda lost my keys.. Ehh.. How are you?.." 7
+  s" This is a bit of a reality check. You're not sure if you can still speak after months of silence.\n\nYou croak: Yea,.. maybe.. I kinda lost my keys.. Ehh.. How are you?.." 8
   timed-dialog-seq ;
 
 : friend-intro ( -- )
@@ -1402,7 +1402,7 @@ e constant poster
   else dup 1 = if drop
     s" friend: Where were you on Friday. Not cool man. Not cool. I ended up riding with Eileen. So embaressing. Anyways, can I come over in a bit? I'm out of smokes, and it looks like lockdown is going to end for real now. And hardly any zombies about." a
   else drop
-    s" friend: What! You're still here? Respect, but we're fresh out of content for this demo. Hope you liked it. Hang around for as much as you want. The house is all yours. Just don't eat too many of those mushrooms." 9
+    s" klomp: What! You're still here? Respect. But we're fresh out of content for this GBA Jam 2021 demo.\n\nHope you liked it.\n\nMaybe one day I'll have time to make a proper game out of this. For now hang around for as long as you want. The place is all yours." c
   then then
   timed-dialog-seq ;
 
