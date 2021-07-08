@@ -246,6 +246,30 @@ def tokenize(file):
 def peek(tokens):
     return tokens[0]
 
+def string_split_single_line(line):
+    """We need to split on word boundry"""
+    if line == "":
+        return line
+    n = 28
+    line_list = line.split()
+    lines_out = line_list.pop(0)
+    count = len(lines_out)
+    for word in line_list:
+        word_len = len(word)
+        if count + word_len + 1 > n:
+            lines_out += '\\n' + word
+            count = word_len
+        else:
+            lines_out += ' ' + word
+            count += word_len + 1
+    return lines_out
+
+def string_split_lines(string):
+    hard_lines = re.split('\\\\n', string)
+    str_out = ""
+    for line in hard_lines:
+        str_out += '\\n' + string_split_single_line(line)
+    return str_out[2:] # remove leading line break
 
 # parse
 def parse_string(context):
@@ -264,7 +288,8 @@ def parse_string(context):
         string += " " + str_split[0]
         if len(str_split) == 2:
             break
-    return Str(first.tok, str_toks, string)
+
+    return Str(first.tok, str_toks, string_split_lines(string))
 
 def colon_compile(context):
     words = []
