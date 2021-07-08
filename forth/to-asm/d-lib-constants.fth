@@ -1040,7 +1040,7 @@ variable print-y-cur
 
 : set-transp-txt-bg ( -- )
   bld-std bld-bg1 bld-bg2 bld-bg3 or bld-obj or bld-set
-  6 4 bldalpha-set ;
+  8 2 bldalpha-set ;
 
 
 ( actions/things of interest )
