@@ -841,17 +841,26 @@ variable beany-equ-offs-y ( player sprite equilibrium y position )
 4 constant frames-per-dir
 tiles-per-sprite frames-per-dir * constant tot-dir-tiles
 
-4 constant tick-shift-move ( remove-bottom 32 tick ranges )
-6 constant tick-shift-idle ( remove-bottom 32 tick ranges )
+5 constant tick-shift-idle ( remove bottom tick ranges )
+4 constant tick-shift-move ( remove bottom tick ranges )
 
 : tid-offs ( obj -- tid-offs ) ( general tid offset into direction )
   dup obj-ticks@ swap obj-idle@ if
     ( tick-shift rshifts: strobing 32 ticks ~= on-off every half second )
     ( the addition of 2 will mean that a val of 0 will be rest1 and a val of 1 )
     ( will match rest2 )
-    tick-shift-idle rshift 1 and 2 +
+    tick-shift-idle rshift 7 and ( here we're cutting our range into 4 regions )
+    dup 0 = if drop 2 else ( rest1 )
+    dup 1 = if drop 2 else ( rest1 )
+    dup 2 = if drop 3 else ( rest2 )
+    dup 3 = if drop 2 else ( rest1 )
+    dup 4 = if drop 2 else ( rest1 )
+    dup 5 = if drop 2 else ( rest1 )
+    dup 6 = if drop 2 else ( rest2 )
+    dup 7 = if drop 2 else ( rest1 )
+    drop ( shouldn't happen ) then then then then then then then then
   else
-    tick-shift-move rshift 3 and ( here we're cutting our range into 4 regions )
+    tick-shift-move rshift 3 and
     dup 0 = if drop 0 else ( left-leg, we're done. we're already at pos 0 )
     dup 1 = if drop 2 else ( rest1 )
     dup 2 = if drop 1 else ( right-leg )
