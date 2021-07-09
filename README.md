@@ -2,21 +2,33 @@
 
 ## what is it
 
-Rath is an interactive development environment for the Gameboy Advance using the Forth programming language. This
-means that you can send code and assets from your editor to your GBA while it is
-running. Either by typing on an interactive terminal (REPL), or by sending
-snippets of code straight from your files. Besides this you can of course
-compile whole GBA binaries as well, which you can run on a real GBA or in an
-emulator.
+Rath is an interactive development environment for the Gameboy Advance using the
+Forth programming language. This means that you can send code and assets from
+your editor to your GBA while it is running. Either by typing on an interactive
+terminal (REPL), or by sending snippets of code straight from your
+files. Besides this you can of course compile whole GBA binaries as well, which
+you can run on a real GBA or in an emulator.
 
-The main programming language is Forth (Pandaforth), but you can also call from Forth into C,
-or whatever language can interface with the Arm ABI. Forth is a pretty awesome low-level programming language. This implementation/flavor is currently about 2000 lines of Arm assembly, including an interactive shell with which you can poke the environment and create new language constructs like functions and arrays, etc on the fly. As 2000 lines is not that much, you can feel pretty confident you can actually be in full control of your programming language.
+The main programming language is Forth (Pandaforth), but you can also call from
+Forth into C, or whatever language can interface with the Arm ABI. Forth is a
+pretty awesome low-level programming language. This implementation/flavor is
+currently about 2000 lines of Arm assembly, including an interactive shell with
+which you can poke the environment and create new language constructs like
+functions and arrays, etc on the fly. As 2000 lines is not that much, you can
+feel pretty confident you can actually be in full control of your programming
+language.
 
-Using the [forth-mode Emacs package](https://github.com/larsbrinkhoff/forth-mode), you can send commands, files or file snippets straight from Emacs, never having to leave your editor ever again to repeat that pesky slow and soul-draining cycle of compiling, loading binaries on pesky flash carts, turning on your GBA and seeing things go up in flames yet again (your mileage may vary).
+Using the [forth-mode Emacs
+package](https://github.com/larsbrinkhoff/forth-mode), you can send commands,
+files or file snippets straight from Emacs, never having to leave your editor
+ever again to repeat that pesky slow and soul-draining cycle of compiling,
+loading binaries on pesky flash carts, turning on your GBA and seeing things go
+up in flames yet again (your mileage may vary).
 
 [Youtube demo video](https://www.youtube.com/watch?v=tLI-5SVOY5A):
 
-[![youtube demo vid](https://img.youtube.com/vi/tLI-5SVOY5A/sddefault.jpg)](https://www.youtube.com/watch?v=tLI-5SVOY5A)
+[![youtube demo
+vid](https://img.youtube.com/vi/tLI-5SVOY5A/sddefault.jpg)](https://www.youtube.com/watch?v=tLI-5SVOY5A)
 
 ## history
 
@@ -27,7 +39,46 @@ Camelforth for the Z80, first published by Bradford J. Rodriguez in 1994.
 For the original Pandaforth readme, which contains interesting technical
 information, see the readme.txt file in this repo.
 
-## current enhancements
+## example demo
+
+I created an [entry](https://klomp.itch.io/covid-adventure) for the [itch.io GBA Jam
+2021](https://itch.io/jam/gbajam21), which is a very simple top-down 2D tile
+background based intro to a possible adventure/RPG.
+
+The main code is in `<root>/forth/to-asm/d-lib-constants.fth` file. All the game
+logic is in Forth. We use C for system bootstrap, serial communication and for
+glue code between Forth, the music engine and the interrupt routines. The latter
+two are written in assembly.
+
+## features
+
+### library
+
+There's a decent amount of library code:
+- constants for memory locations and IO registers
+- shadow OAM that updates the OAM data on vblank
+- key press detection
+- abstract sprite object that tracks various properties
+- player movement
+- sprite direction logic
+- text boxes
+- collision detection
+- 'things of interest' map overlay that can be queried at tile granularity
+- layer blending
+- interrupts, which are handled by tonclib, interfaced through C
+- sound: Apex Audio System
+
+The big issue currently with the library is that it's quite intertwined with the
+game that I wrote it for. Hopefully I will find some time to disentangle the
+two. Which for the majority of the library code shouldn't be too hard.
+
+The library code is still a far cry from general and flexible. The only way it
+will move towards this ideal is if it will actually need to evolve because of
+real-world demand. But I must say that Forth is lends itself quite well to
+refactoring if need be.
+
+
+### serial communication
 
 Back in 2005, computers still came standard with serial ports, and the prevaling
 methods to connect to your GBA were mbv2 and Xboo cables. It turns out you can
@@ -41,33 +92,28 @@ waiting on data while waiting on input (perhaps Xboo and MBv2 did this too, I
 have no idea). In any case, this makes sending binary data at reasonable speeds
 possible, without having to worry if we dropped a bit somewhere.
 
-The Forth implementation now runs +- 3x faster. Previously it was executed from
-EWRAM, which is not ideal, but especially not for Arm-mode assembly. It's more
-than small enough to run from IWRAM.
-
 I've added a (hopefully cross-platform) Python shell script to interface with
-the GBA.
+the GBA from a computer.
 
-We can now build with a current devkitPro.
+### some modernizations and breaking changes from the original Pandaforth
 
-We're now using libtonc instead of libgba.
+- builds expect a modern devkitPro.
+- switched from libgba to libtonc
+- converted all Forth words to lowercase
+- removed mbv2 and Xboo support, added own serial protocol
+- added halfword memory access words
+- for speed added byte access words that use ldrb instead of ldrh
+- for speed rewrote `move` and `fill` functions in assembly.
+- moved Forth base system from ewram to iwram
 
-I've deleted common build tools, binaries and libraries that were included in
-the repo: libgba, gbafix, test roms, etc..
-
-Forth now plays nice with unix linebreaks. So we can now handle just line feed
-instead of cr + line feed.
-
-Xboo and MBv2 support has been removed. I would like to have a conversation with
-people that can still run that setup in this day and age.
-
-Converted all Forth words to lowercase. I don't like my programming language
-screaming at me, and life is too short to press the capslock button all the
-time.
-
-Started on the library code. So far there are constants for memory locations and
-IO registers, we've got a shadow OAM that updates the OAM data on vblank, we've
-got key press detection and a mini game loop.
+For the game I needed a cross-compiler, as compiling code at runtime is way to
+slow for a game. Very quickly I was running up against compile times of half a
+minute. What I have now is something quite hackish and simplistic. We can
+compile but we don't really understand the Forth code. The cross-compiler isn't
+strong enough to handle `immediate mode`. Some immediate words like loop
+constructs are handled by specialized Python code. Ideally we would rewrite the
+compiler to interpret all the Forth primitives in some abstract way. Hopefully
+I'll find the time for this some day.
 
 ## how to build/use
 
@@ -80,14 +126,17 @@ Install devkitARM, libtonc, and make sure the binaries are in your exec
 path. Also make sure the $(DEVKITARM) env variable is set to your devkitARM
 folder.
 
-Run `make` in the root of the repo. This creates a binary called `rath.gba`.
-
-To make a demo binary, run `build.sh`, which will create a `rath-demo.gba` file.
+Run `make` in the root of the repo. This creates two binaries called `rath.gba`,
+and `covid-adventures.gba`. The former is the Forth base system, which you can
+interact with through a serial cable. The latter is the demo game.
 
 For interactive development, flash the binary on a cart, put the cart in a Game
-Boy Advance, and start it. `rath.gba` will put you in repl mode. `rath-demo.gba` will
-start a game loop with a little sprite you can control with the direction
-pad. To jump out of the game loop and into the repl, press select.
+Boy Advance, and start it. `rath.gba` will put you in repl
+mode. `covid-adventures.gba` should start a game loop with a little sprite you
+can control with the direction pad. To jump out of the game loop and into the
+repl, press select. Currently, I temporarily broke the interactivity in
+`covid-adventures.gba` as I ran up against a deadline of a game jam. I hope to
+reinstate it soon.
 
 To connect to said binary with a UART cable:
 `<this-repo-root>/shell/shell.py --gbaser /dev/ttyUSB0`
@@ -108,21 +157,59 @@ wrapped the above cmdline invocation in a one-liner script.
 You can also run the PFdemo.gba file in an emulator, if you want to move the
 little sprite around. Not too exciting to all, but I think it's quite cool :D
 
-## future
 
-Rath is meant to be a bona-fide development environment. Of course there's a big
-chance this passion project will stumble right after it's first release on
-Github. As most projects do.
+## attribution and licensing
 
-But hopefully it will some day be featureful enough to be able to make some
-apps/games with. It should have some library code to handle the basics like key
-presses, background modes, sprites, music, etc (some of this is now
-implemented). The music engine will come from an existing C/Asm library like
-Apex Audio System or Maxmod. In addition to that, there are some quality of life
-development improvements to be done, like easy inclusion of assets, interactive
-asset testing, better IDE integration, etc.
+Forth programming language:
 
-Beyond that one can think of heaps of improvements: swapping out Forth modules
-in and out of IWRAM (A lot of Forth implementations make this relatively easy),
-test framework, optimized graphics routines, 3d engine, neural engine, etc.. But,..
-baby steps.
+The underlying Forth system was originally written by Bradford J. Rodriguez in
+1994 for the Z80. This Forth flavor is known as CamelForth.
+
+- license: see <root>/source/cam80-12/README.Z80 in this repo
+- site: http://www.camelforth.com
+
+Camelforth was ported to armv4 by Torlus, with no explicit copyright statement
+other than a (c) after their name in <root>/README.txt in this repo.
+
+I myself have made some modifications to the Forth sources, and I've added a
+simplistic cross compiler.
+
+For the original code by Torlus, see the first commit in this repo, which was
+put on Github by user `iansharkey`: https://github.com/iansharkey/pandaforth
+
+
+Assets used for the example game:
+
+intro/continue screen Covid virus impression:
+- credit: Alissa Eckert, MSMI; Dan Higgins, MAMS
+- license: public domain
+- site: https://phil.cdc.gov/Details.aspx?pid=23311
+
+ring tone: "phone ringing.wav"
+- credit: `Tomlija`, on freesound.org
+- license: Creative Commons, Attribution
+  https://creativecommons.org/licenses/by/3.0/
+- site: https://freesound.org/s/98023
+
+piano note: pianos/roland_grand_piano/C6.WAV
+- credit: the WaveWorld sample library
+- license: public domain
+- site: https://modarchive.org/forums/index.php?topic=2406.0
+
+The font came with Pandaforth.
+
+For the IO register naming conventions and the key input logic, I've adapted the
+code in the headers of [libtonc](https://github.com/devkitPro/libtonc).
+
+The rest of the assets and code for the example game was made by me:
+- pixelart for apartment, phone and player sprite-work
+- dialog, text
+- music
+- programming
+
+
+The license for any modifications, additions to existing work and also all the
+original work by me in any medium falls under the repo-wide license, which can
+be found in <root>/LICENSE.
+
+Please let me know if I've overlooked anything asset or license related.
