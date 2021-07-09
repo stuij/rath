@@ -588,6 +588,16 @@ variable key-prev
   spr-start dup clear-spr spr-head !
   0 spr-deallocs ! ;
 
+( initialize sprites outside of screen )
+: init-spr ( -- )
+  128 0 do
+    00a000f0 mem-oam i + !
+    0 mem-oam i + cell + !
+    8 +loop ;
+
+  ( OBJ_ATTR obj_attr = {160, 240, 0, 0}; )
+  ( for int i=0; i<128; i++ oam_mem[i] = obj_attr; )
+
 
 ( sprite objects )
 
@@ -1087,7 +1097,7 @@ e constant poster
 
 : tv-str           s" You flick the TV to a news program.\n\n'... estimate that the zombie hordes might now have reached Nebraska. Perhaps Florida too, but there it's hard to tell them apart from the population ...'\n\nYou sigh.. Always the same old, same old." ;
 
-: front-door-str   s" You shall not pass!!\n\nWell, it's not that dramatic. But you haven't opened the door in months.\n\nIn fact you kinda lost your keys. Last week, a search didn't show up anything.\n\nPerhaps you SHOULD be worried." ;
+: front-door-str   s" You shall not pass!!\n\nWell, it's not that dramatic. But you haven't opened the door in months.\n\nIn fact you kinda lost your keys. Last week, after searching all over the apartment, you still couldn't find them.\n\nPerhaps you SHOULD be worried." ;
 
 : desk-str         s" Your desk. It's so tidy. Not a thing out of place. There's a film of dust on the laptop keys.\n\nYour eyes try to avoid the scene. You don't want to be here." ;
 
@@ -1198,7 +1208,7 @@ e constant poster
 : bath-dialog bath-str 3 print-msg set-in-dialog ;
 : couch-dialog couch-start-str 8 print-msg ['] couch-seq main-loop-continuation ! ;
 : tv-dialog tv-str c print-msg set-in-dialog ;
-: front-door-dialog front-door-str c print-msg set-in-dialog ;
+: front-door-dialog front-door-str e print-msg set-in-dialog ;
 : desk-dialog desk-str 8 print-msg set-in-dialog ;
 : closet-dialog closet-str 8 print-msg set-in-dialog ;
 : clothes-dialog clothes-str b print-msg set-in-dialog ;
@@ -1232,8 +1242,8 @@ e constant poster
 
 ( timed events )
 
-900 constant friend-call-wait-thresh
-500 constant suggest-wait-thresh
+750 constant friend-call-wait-thresh
+750 constant suggest-wait-thresh
 500 constant sinister-call-wait-thresh
 500 constant woozy-wait-thresh
 500 constant end-seq-thresh
@@ -1287,7 +1297,7 @@ e constant poster
   4 +loop ;
 
 : woozy-start ( -- )
-  s" You're starting feel a bit woozy, and your eyes seem to be loosing their grip on what colors should look like. This isn't good..." 5 print-msg
+  s" You're starting feel a bit woozy, and your eyes seem to be losing their grip on what colors should look like. This isn't good..." 5 print-msg
   palette-invert
   0 timed-event-counter !
   set-in-dialog
