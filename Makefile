@@ -152,6 +152,9 @@ $(OUTPUT).elf	: $(OFILES)
 	@echo built ... $(notdir $@)
 	@$(OBJCOPY) -O binary $< $@
 	@gbafix $@
+	padbin 0x100 $(RATH_HOME)/rath.gba
+	gbfs boot.gbfs $(RATH_HOME)/forth/lib/*
+	cat $(RATH_HOME)/rath.gba boot.gbfs > $(RATH_HOME)/covid_adventure.gba
 
 #---------------------------------------------------------------------------------
 %_mb.elf:

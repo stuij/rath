@@ -1,6 +1,11 @@
+#!/bin/bash
+
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
 echo Adding source files to ROM...
-padbin 0x100 rath.gba
-gbfs boot.gbfs forth/lib/*
-cat rath.gba boot.gbfs > rath-demo.gba
-echo Done! [ rath-demo.gba ] created.
-# mgba-qt rath-demo.gba
+
+padbin 0x100 $ROOT/rath.gba
+gbfs boot.gbfs $ROOT/forth/lib/*
+cat $ROOT/rath.gba boot.gbfs > $ROOT/covid_adventure.gba
+
+echo Done! [ covid_adventure.gba ] created.
