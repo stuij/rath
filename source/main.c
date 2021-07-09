@@ -50,10 +50,6 @@ int main() {
 
   in_music = 0;
 
-  // Initialize sprites (outside of screen)
-  OBJ_ATTR obj_attr = {160, 240, 0, 0};
-  for(int i=0; i<128; i++) oam_mem[i] = obj_attr;
-  
   // Find the embedded source, if any
   gbfs_entry = NULL;
   gbfs = find_first_gbfs_file(find_first_gbfs_file);
@@ -119,6 +115,7 @@ int EWRAM_CODE service(int serv, int param) {
   } else if (serv == 2) {
     if (in_music) {
       irq_add(II_TIMER1, AAS_FastTimer1InterruptHandler);
+      AAS_MOD_SetVolume(256);
       AAS_MOD_Play(AAS_DATA_MOD_bla);
     }
     return 0;
@@ -146,7 +143,7 @@ int EWRAM_CODE service(int serv, int param) {
   } else if (serv == 5) {
     // Initialise AAS
     AAS_SetConfig(
-        AAS_CONFIG_MIX_32KHZ,
+        AAS_CONFIG_MIX_16KHZ,
         AAS_CONFIG_CHANS_8,
         AAS_CONFIG_SPATIAL_STEREO,
         AAS_CONFIG_DYNAMIC_OFF );
