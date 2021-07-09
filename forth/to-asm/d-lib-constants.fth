@@ -1101,7 +1101,7 @@ e constant poster
 
 : poster-str       s" It's a really nice poster of some art-house movie.\n\nYou haven't seen the movie.\n\nYou would like to, but you are afraid that you won't like the movie and then you're stuck with a poster that reminds you of a shitty movie." ;
 
-: call-init-str s" RING RING!!!" ;
+: call-init-str s" RING!! \n\nRING!! \n\nRING!!" ;
 
 : set-in-dialog ( -- )
   ['] in-dialog main-loop-continuation ! ; ( ai, circular dependency.. ok when cross-compiling, but not when Forthing on GBA )
@@ -1329,7 +1329,7 @@ e constant poster
 : sinister-call-start ( -- )
   play-ring
   bg-phone-show
-  call-init-str 1 print-msg
+  call-init-str 5 print-msg
   ['] sinister-pick-up main-loop-continuation ! ;
 
 : sinister-call ( -- )
@@ -1414,7 +1414,7 @@ e constant poster
 : friend-call-start
   play-ring
   bg-phone-show
-  call-init-str 1 print-msg
+  call-init-str 5 print-msg
   ['] friend-pick-up main-loop-continuation ! ;
 
 : friend-call ( -- )
