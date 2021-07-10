@@ -39,11 +39,17 @@ Camelforth for the Z80, first published by Bradford J. Rodriguez in 1994.
 For the original Pandaforth readme, which contains interesting technical
 information, see the readme.txt file in this repo.
 
-## example demo
+## example game
 
 I created an [entry](https://klomp.itch.io/covid-adventure) for the [itch.io GBA Jam
 2021](https://itch.io/jam/gbajam21), which is a very simple top-down 2D tile
 background based intro to a possible adventure/RPG.
+
+[Youtube video](https://www.youtube.com/watch?v=sxgEoEmLS8s):
+
+[![youtube demo
+vid](https://img.youtube.com/vi/sxgEoEmLS8s/sddefault.jpg)](https://www.youtube.com/watch?v=sxgEoEmLS8s)
+
 
 The main code is in `<root>/forth/to-asm/d-lib-constants.fth` file. All the game
 logic is in Forth. We use C for system bootstrap, serial communication and for
