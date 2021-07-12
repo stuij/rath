@@ -1242,7 +1242,7 @@ e constant poster
 
 ( timed events )
 
-1000 constant friend-call-wait-thresh
+750 constant friend-call-wait-thresh
 750 constant suggest-wait-thresh
 500 constant sinister-call-wait-thresh
 500 constant woozy-wait-thresh

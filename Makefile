@@ -9,7 +9,7 @@
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
 TARGET		:=	rath
-BUILD		  :=	build
+BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 
