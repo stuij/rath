@@ -121,7 +121,6 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #---------------------------------------------------------------------------------
 $(BUILD): music
 	@[ -d $@ ] || mkdir -p $@
-	@make --no-print-directory -C $(AAS_HOME)
 	@make --no-print-directory -C $(UART_HOME)
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
@@ -129,9 +128,12 @@ $(BUILD): music
 clean:
 	@echo clean ...
 	@rm -fr $(BUILD) *.elf source/AAS_Data*
+	@make --no-print-directory -C $(UART_HOME) clean
+	@make --no-print-directory -C $(AAS_HOME) clean
 
 #---------------------------------------------------------------------------------
 music:
+	@make --no-print-directory -C $(AAS_HOME)
 	$(CONV2AAS) $(RATH_HOME)/AAS_Data
 	mv AAS_Data.* $(RATH_HOME)/source
 
